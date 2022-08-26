@@ -4,6 +4,8 @@
   windows_subsystem = "windows"
 )]
 
+// launch dev mode with:
+// cargo tauri dev
 
 use std::fs::*;
 use std::collections::HashMap;
@@ -71,6 +73,7 @@ struct Segment {
 // https://doc.rust-lang.org/std/cmp/trait.Ord.html
 
 
+
 // Create a list of segments with the info of the jsons in the data folder
 fn list_of_segments(path_dir:String) -> Vec<Segment>
 {
@@ -97,7 +100,21 @@ fn list_of_segments(path_dir:String) -> Vec<Segment>
 		});
 	}
 
+	// WIP, sort this vector once ord is implemented in Segment
+
 	return to_return;
+}
+
+#[tauri::command]
+fn command_retrieve_last_pomodoros() -> Vec<String> {
+
+	println!("command_retrieve_last_pomodoros");
+
+	vec![
+		"First" .to_string(),
+		"Second".to_string(),
+		"Third" .to_string(),
+	]
 }
 
 fn main() {
@@ -106,13 +123,16 @@ fn main() {
 
 	let path_root_folder = "data".to_string();
 
+	// WIP, create path if doesn't exist
+
 	let _out = list_of_segments(path_root_folder);
 	for i in _out.iter() {println!("{:?}", i);}
 
 	let _o = 0;
 
 	tauri::Builder::default()
-	  .run(tauri::generate_context!())
-	  .expect("error while running tauri application");
+		.invoke_handler(tauri::generate_handler![command_retrieve_last_pomodoros])
+		.run(tauri::generate_context!())
+		.expect("error while running tauri application");
 
 }

@@ -3,7 +3,8 @@
     "beforeBuildCommand": "",
     "beforeDevCommand": "",
     "devPath": "ui",
-    "distDir": "y"
+    "distDir": "ui",
+    "withGlobalTauri": true
   },
   "package": {
     "productName": "pomodoro_tracker",
