@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>🍅</title>
     <style>
 
       body, html {
@@ -32,19 +32,66 @@
           table-layout   : fixed;     /* Para que sea "even" */
           width          : 100%;
           min-height     : 100%;
+
+          /* display: flex; */
+          
       }
       td, th {
-          border: 1px solid;
+          border : 1px solid;
+          margin : 0;
+          padding: 0;
+      }
+
+      .container_left {
+        padding         : 50px;
+        justify-content : flex-start;
+        display         : flex;
+        flex-direction  : column;
+        height          : 100%;
+        min-height      : 100%;
+        background-color: red;
+        width           : calc(50% - 100px);
+        float           : left;
+      }
+
+      .container_right {
+        padding         : 50px;
+        justify-content : flex-start;
+        display         : flex;
+        flex-direction  : column;
+        height          : 100%;
+        min-height      : 100%;
+        background-color: blue;
+        width           : calc(50% - 100px);
+        float           : right;
+      }
+      
+      .element_left {
+        width  : 100%;
+        margin : 0;
+        padding: 0;
+        border : 0;
       }
 
     </style>
   </head>
   <body>
-    <table>
-      <tr>
-        <th>aaa</th>
-        <th>aaa</th>
-      </tr>
-    </table>
+
+    <div class="container_left">
+      <input class="element_left" type="text">
+
+      <div id="list_of_events">
+        <div>asdasdasdasd</div>
+        <div>asdasdasdasd</div>
+        <div>asdasdasdasd</div>
+        <div>asdasdasdasd</div>
+        <div>asdasdasdasd</div>
+      </div>
+    </div>
+
+    <div class="container_right">
+      <button id="play"></button>
+    </div>
+
   </body>
 </html>
