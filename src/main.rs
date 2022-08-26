@@ -8,7 +8,9 @@
 use std::fs::*;
 use std::collections::HashMap;
 use std::io::Read;
-use chrono::{DateTime, TimeZone, NaiveDateTime, Utc};
+use chrono::{DateTime, Utc, FixedOffset}; // TimeZone, NaiveDateTime
+use chrono::TimeZone;
+// use chrono::{NaiveDateTime, NaiveDate};
 use std::path::Path;
 
 
@@ -56,31 +58,58 @@ fn list_files_in_folder(folder_name: &str) -> Result<Vec<String>, String> {
 	Ok(files)
 }
 
-struct segment {
-  name : Option<String>,
+
+
+#[derive(Debug)]
+struct Segment {
+  name : String,
   start: DateTime<Utc>,
   end  : DateTime<Utc>,
 }
 
-fn main() {
+// WIP implement trait ord for Segment
+// https://doc.rust-lang.org/std/cmp/trait.Ord.html
 
-	println!("Starting server...");
 
-	// let data = load_json("data/my_json_test.json").unwrap();
+// Create a list of segments with the info of the jsons in the data folder
+fn list_of_segments(path_dir:String) -> Vec<Segment>
+{
+	let mut to_return : Vec<Segment> = Vec::new();
 
-	let path_root_folder = "data";
-
-	let files = list_files_in_folder(path_root_folder).unwrap();
-	for file in &files {
-	println!("{}", file);
-	}
+	let files = list_files_in_folder(&path_dir).unwrap();
+	// for file in &files {
+	// println!("{}", file);
+	// }
 
 	let data_of_files_merged = files.iter().map(|file_name| {
-	load_json(&(path_root_folder.to_owned()+"/"+file_name)).unwrap()
+		load_json(&(path_dir.to_owned()+"/"+file_name)).unwrap()
 	}).flatten().collect::<Vec<HashMap<String, String>>>();
-	for item in data_of_files_merged {
-		println!("{:?}", item);
+	// for item in data_of_files_merged {
+	// 	println!("{:?}", item);
+	// }
+
+	for i in data_of_files_merged.iter()
+	{
+		to_return.push(Segment {
+			name : i.get("name").unwrap_or(&"unknown".to_string()).to_string(),
+			start: Utc.datetime_from_str(&i.get("start").unwrap(), "%Y-%m-%d %H:%M:%S").unwrap(),
+			end  : Utc.datetime_from_str(&i.get("end"  ).unwrap(), "%Y-%m-%d %H:%M:%S").unwrap(),
+		});
 	}
+
+	return to_return;
+}
+
+fn main() {
+
+	println!("Starting...");
+
+	let path_root_folder = "data".to_string();
+
+	let _out = list_of_segments(path_root_folder);
+	for i in _out.iter() {println!("{:?}", i);}
+
+	let _o = 0;
 
 	tauri::Builder::default()
 	  .run(tauri::generate_context!())
