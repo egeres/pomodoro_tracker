@@ -10,7 +10,7 @@
 use std::fs::*;
 use std::collections::HashMap;
 use std::io::Read;
-use chrono::{DateTime, Utc, FixedOffset}; // TimeZone, NaiveDateTime
+use chrono::{DateTime, Utc}; // TimeZone, NaiveDateTime
 use chrono::TimeZone;
 use std::path::Path;
 use std::cmp::Ordering;
@@ -143,17 +143,26 @@ fn main() {
 
 	let path_root_folder = "data".to_string();
 
+	// Create path with intermediate folders if it doesn't exist
 	if !Path::new(&path_root_folder).exists() {
-		// Create path with intermediate folders if it doesn't exist
 		create_dir_all(&path_root_folder).unwrap();
 	}
 
-
+	// List of segments
 	let mut _out = list_of_segments(path_root_folder);
-
 	_out.sort();
+	// for i in _out.iter() {println!("{:?}", i);}
 
-	for i in _out.iter() {println!("{:?}", i);}
+	// We get the unique names of the segments
+	let mut unique_names : Vec<String> = Vec::new();
+	for i in _out.iter().rev() {
+		if !unique_names.contains(&i.name) {
+			unique_names.push(i.name.clone());
+		}
+	}
+	// print !("{:?}", unique_names);
+
+
 
 	let _o = 0;
 

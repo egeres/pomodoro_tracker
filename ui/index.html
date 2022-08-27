@@ -8,6 +8,7 @@
     <style>
 
       body, html {
+        font-size       : 20px;
         margin          : 0;
         background-color: black;
         color           : #eee;
@@ -15,6 +16,9 @@
         min-height      : 100%;
         height          : 100%;
         overflow        : hidden;
+
+        background-image: url("a.png");
+        background-size: cover;
       }
 
       .noselect {
@@ -25,6 +29,20 @@
         -ms-user-select      : none; /* Internet Explorer/Edge */
         user-select          : none; /* Non-prefixed version, currently
                                         supported by Chrome, Opera and Firefox */
+      }
+
+      input[type=text] {
+        font-size       : 20px;
+        background-color: #171717;
+        padding         : 10px;
+        border-radius   : 5px;
+        color           : #eee;
+      }
+
+      input:focus-visible {
+        background-color: #2e2e2e;
+        border          : none;
+        outline         : none;
       }
 
       table {
@@ -49,7 +67,7 @@
         flex-direction  : column;
         height          : 100%;
         min-height      : 100%;
-        background-color: black;
+        background-color: rgba(0, 0, 0, 0.7);
         width           : calc(50% - 100px);
         float           : left;
       }
@@ -61,7 +79,7 @@
         flex-direction  : column;
         height          : 100%;
         min-height      : 100%;
-        background-color: black;
+        background-color: transparent;
         width           : calc(50% - 100px);
         float           : right;
       }
@@ -73,20 +91,24 @@
         border : 0;
       }
 
+      .row {
+        color  : rgb(160, 160, 160);
+        padding: 5px;
+      }
+
+      .row:hover {
+        color  : rgb(255, 255, 255);
+        /* background-color: rgb(50, 50, 50); */
+      }
+
     </style>
   </head>
   <body>
 
     <div class="container_left">
-      <input class="element_left" type="text">
-
-      <div id="list_of_events">
-        <div>asdasdasdasd</div>
-        <div>asdasdasdasd</div>
-        <div>asdasdasdasd</div>
-        <div>asdasdasdasd</div>
-        <div>asdasdasdasd</div>
-      </div>
+      <input id="input_pomodoro_name" class="element_left" type="text">
+      <div style="height:20px"></div>
+      <div id="list_of_events"></div>
     </div>
 
     <div class="container_right">
@@ -94,10 +116,37 @@
     </div>
 
     <script>
-      
+
       const invoke = window.__TAURI__.invoke
 
-      invoke('command_retrieve_last_pomodoros')
+      function set_value_if_input(the_value)
+      {
+        document.getElementById("input_pomodoro_name").value = the_value;
+      }
+
+      function create_rows_left_panel(list_of_names)
+      {
+          // console.log(list_of_names)
+
+          for (let x of list_of_names)
+          {
+              var new_row = document.createElement("div");
+              new_row.classList.add("row");
+              new_row.classList.add("noselect");
+              new_row.onclick   = (self) => { set_value_if_input(self.target.innerHTML); }
+              new_row.innerHTML = x;
+              document.getElementById("list_of_events").appendChild(new_row);
+          }
+      }
+
+      // // For testing
+      // create_rows_left_panel(["aaa", "bbb", "ccc"])
+
+      invoke('command_retrieve_last_pomodoros').then(to_create => {
+        console.log(to_create)
+        create_rows_left_panel(to_create)
+      })
+
 
     </script>
 
