@@ -12,9 +12,8 @@ use std::collections::HashMap;
 use std::io::Read;
 use chrono::{DateTime, Utc, FixedOffset}; // TimeZone, NaiveDateTime
 use chrono::TimeZone;
-// use chrono::{NaiveDateTime, NaiveDate};
 use std::path::Path;
-
+use std::cmp::Ordering;
 
 // parse json file to list of hashmaps
 fn load_json(file_name: &str) -> Result<Vec<HashMap<String, String>>, String> {
@@ -69,10 +68,31 @@ struct Segment {
   end  : DateTime<Utc>,
 }
 
-// WIP implement trait ord for Segment
-// https://doc.rust-lang.org/std/cmp/trait.Ord.html
+impl Ord for Segment { // https://doc.rust-lang.org/std/cmp/trait.Ord.html
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.start.cmp(&other.start)
+    }
+}
 
+impl PartialOrd for Segment {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
+impl PartialEq for Segment {
+    fn eq(&self, other: &Self) -> bool {
+        (self.start == other.start) && (self.name == other.name) && (self.end == other.end)
+    }
+}
+
+impl Eq for Segment {}
+
+// impl Eq for Segment { 
+// 	fn eq(&self, other: &Self) -> bool {
+//         (self.start == other.start) && (self.name == other.name) && (self.end == other.end)
+// 	}
+// }
 
 // Create a list of segments with the info of the jsons in the data folder
 fn list_of_segments(path_dir:String) -> Vec<Segment>
@@ -123,9 +143,16 @@ fn main() {
 
 	let path_root_folder = "data".to_string();
 
-	// WIP, create path if doesn't exist
+	if !Path::new(&path_root_folder).exists() {
+		// Create path with intermediate folders if it doesn't exist
+		create_dir_all(&path_root_folder).unwrap();
+	}
 
-	let _out = list_of_segments(path_root_folder);
+
+	let mut _out = list_of_segments(path_root_folder);
+
+	_out.sort();
+
 	for i in _out.iter() {println!("{:?}", i);}
 
 	let _o = 0;
