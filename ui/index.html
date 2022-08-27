@@ -122,7 +122,7 @@
         height          : 100%;
         z-index         : 1;
         background-color: rgba(0, 0, 0, 0.7);
-        display         : flex;
+        display         : none;
         justify-content : center;
         align-items     : center;
       }
@@ -147,7 +147,7 @@
 
     <div class="overlay_container noselect">
       <div class="pop_up_dialog_box_with_gradient_borders">
-        <p>Are you sure you want to cancel the current pomodoro?</p>
+        <p id="overlay_text">Are you sure you want to cancel the current pomodoro?</p>
         <div>
           <div class="button_a" onclick="cancel_pomodoro()">Yes</div>
           <div style="display:inline-block;min-width:20px"></div>
@@ -172,7 +172,7 @@
       <!-- <button id="play"></button> -->
 
       <div>
-        <span id="container_repeat">
+        <span id="container_repeat" onclick="query_retrospective_pomodoro()">
           <i
           data-eva        = "arrow-circle-left-outline"
           data-eva-fill   = "#eee"
@@ -186,7 +186,7 @@
           data-eva-height = "48"
           data-eva-width  = "48"></i>
         </span>
-        <span id="container_play" onclick="start_crono()">
+        <span id="container_play" onclick="hook_stop_crono = start_crono()">
           <i
           data-eva        = "play-circle-outline"
           data-eva-fill   = "#eee"
@@ -200,8 +200,10 @@
 
     <script>
 
-        let current_mode = "not_started"
-        let current_time = 3
+        let current_mode    = "not_started"
+        let current_time    = 300
+        let tiiii           = current_time
+        let hook_stop_crono = null
 
         function update_visuals()
         {
@@ -231,32 +233,77 @@
         function query_cancel_pomodoro()
         {
           document.getElementsByClassName("overlay_container")[0].style.display = "flex"
+          document.getElementById("overlay_text").innerHTML = "Are you sure you want to cancel the current pomodoro?"
+        }
 
+        function query_retrospective_pomodoro()
+        {
+          document.getElementsByClassName("overlay_container")[0].style.display = "flex"
+          document.getElementById("overlay_text").innerHTML = "Are you sure you want to annotate a retrospective pomodoro?"
         }
         
+        function cancel_pomodoro()
+        {
+          document.getElementsByClassName("overlay_container")[0].style.display = "none"
+          current_mode = "not_started"
+          update_visuals()
+
+          console.log(hook_stop_crono)
+
+          if (hook_stop_crono != null)
+          {
+            clearInterval(hook_stop_crono)
+            hook_stop_crono = null
+          }
+
+          arcProgress.updateProgress({progress:1.0})
+
+        }
+
         function sleep(ms)
         {
             return new Promise((resolve) => { setTimeout(resolve, ms); });
         }
 
-        async function start_crono()
+        function start_crono()
         {
           current_mode = "running"
           update_visuals()
 
-          for (let i = current_time; i > 0; i--) {
-            await sleep(60 * 100);
-            let j = i - 1
-            console.log(j)
-            console.log(j / current_time)
-            document.getElementById("remaining_minutes").innerHTML = j
-            arcProgress.updateProgress({progress:
-              j / current_time
-            })
-          }
+          // for (let i = current_time; i > 0; i--) {
+          //   await sleep(60 * 10);
+          //   let j = i - 1
+          //   console.log(j)
+          //   console.log(j / current_time)
+          //   document.getElementById("remaining_minutes").innerHTML = j
+          //   arcProgress.updateProgress({progress:j/current_time})
+          // }
 
-          current_mode = "not_started"
-          update_visuals()
+          console.log("...")
+
+          let my_interval = setInterval(() => {
+            if (tiiii > 0)
+            {
+              tiiii--
+              document.getElementById("remaining_minutes").innerHTML = tiiii
+              arcProgress.updateProgress({progress:tiiii/current_time})
+              // update_visuals()
+            }
+            else
+            {
+              clearInterval(my_interval)
+              // current_mode = "not_started"
+              // update_visuals()
+
+              current_mode = "not_started"
+              update_visuals()
+            }
+          }, 100)
+
+          return my_interval
+
+          // current_mode = "not_started"
+          // update_visuals()
         }
 
 
