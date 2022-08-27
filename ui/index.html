@@ -201,7 +201,7 @@
     <script>
 
         let current_mode    = "not_started"
-        let current_time    = 300
+        let current_time    = 50
         let tiiii           = current_time
         let hook_stop_crono = null
 
@@ -222,8 +222,6 @@
 
           document.getElementById("remaining_minutes").innerHTML = current_time
         }
-
-        update_visuals()
 
         function close_pop_up()
         {
@@ -258,6 +256,7 @@
 
           arcProgress.updateProgress({progress:1.0})
 
+          tiiii = current_time
         }
 
         function sleep(ms)
@@ -297,6 +296,11 @@
 
               current_mode = "not_started"
               update_visuals()
+
+              tiiii = current_time;
+              arcProgress.updateProgress({progress:1.0})
+              var audio = new Audio('notification.mp3');
+              audio.play();
             }
           }, 100)
 
@@ -305,7 +309,6 @@
           // current_mode = "not_started"
           // update_visuals()
         }
-
 
         const customText = [{
           color: '#000',
@@ -326,11 +329,7 @@
         });
 
         eva.replace()
-
-
-        // setInterval(() => {
-        //   arcProgress.updateProgress({progress:Math.random()});
-        // }, 1000);
+        update_visuals()
 
     </script>
 
