@@ -75,7 +75,8 @@
 
       .container_right {
         padding         : 50px;
-        justify-content : flex-start;
+        justify-content : center;
+        align-items     : center;
         display         : flex;
         flex-direction  : column;
         height          : 100%;
@@ -93,7 +94,7 @@
       }
 
       .row {
-        color  : rgb(160, 160, 160);
+        color  : rgb(116, 116, 116);
         padding: 5px;
       }
 
@@ -112,47 +113,117 @@
       <div id="list_of_events"></div>
     </div>
 
-    <div class="container_right">
+    <div class="container_right noselect">
 
       <div id="progress-container">
-
       </div>
-      <button id="play"></button>
 
-      
-      <i data-eva="arrow-circle-left-outline" data-eva-fill="#eee" data-eva-height="48" data-eva-width="48"></i>
-      <i data-eva="close-circle-outline"      data-eva-fill="#eee" data-eva-height="48" data-eva-width="48"></i>
-      <i data-eva="play-circle-outline"       data-eva-fill="#eee" data-eva-height="48" data-eva-width="48"></i>
+      <h1 id="remaining_minutes">25</h1>
+
+      <!-- <button id="play"></button> -->
+
+      <div>
+        <span id="container_repeat">
+          <i
+          data-eva        = "arrow-circle-left-outline"
+          data-eva-fill   = "#eee"
+          data-eva-height = "48"
+          data-eva-width  = "48"></i>
+        </span>
+        <span id="container_stop">
+          <i
+          data-eva        = "close-circle-outline"
+          data-eva-fill   = "#eee"
+          data-eva-height = "48"
+          data-eva-width  = "48"></i>
+        </span>
+        <span id="container_play" onclick="start_crono()">
+          <i
+          data-eva        = "play-circle-outline"
+          data-eva-fill   = "#eee"
+          data-eva-height = "48"
+          data-eva-width  = "48"></i>
+        </span>
+      </div>
 
 
     </div>
 
     <script>
 
+        let current_mode = "not_started"
+        let current_time = 3
+
+        function update_visuals()
+        {
+          if (current_mode == "not_started")
+          {
+            document.getElementById("container_repeat").style.display = "inline-block"
+            document.getElementById("container_stop")  .style.display = "none"
+            document.getElementById("container_play")  .style.display = "inline-block"
+          }
+          if (current_mode == "running")
+          {
+            document.getElementById("container_repeat").style.display = "none"
+            document.getElementById("container_stop")  .style.display = "inline-block"
+            document.getElementById("container_play")  .style.display = "none"
+          }
+
+          document.getElementById("remaining_minutes").innerHTML = current_time
+        }
+
+        update_visuals()
+        
+        function sleep(ms)
+        {
+            return new Promise((resolve) => { setTimeout(resolve, ms); });
+        }
+
+        async function start_crono()
+        {
+          current_mode = "running"
+          update_visuals()
+
+          for (let i = current_time; i > 0; i--) {
+            await sleep(60 * 1000);
+            let j = i - 1
+            console.log(j)
+            console.log(j / current_time)
+            document.getElementById("remaining_minutes").innerHTML = j
+            arcProgress.updateProgress({progress:
+              j / current_time
+            })
+          }
+
+          current_mode = "not_started"
+          update_visuals()
+        }
+
+
         const customText = [{
-          text : '%',
-          size : '12px',
           color: '#000',
-          x    : 142,
-          y    : 102
+          x    : 150,
+          y    : 150,
         }];
 
         const arcProgress = new ArcProgress({
-          el       : '#progress-container',
-          progress : .2,
-          fillColor: "#eee",
-          emptyColor : "#444",
-          // speed    : 5,
-          // value    : '10.92',
-          size     : 300,
+          el        : '#progress-container',
+          progress  : 1.0,
+          fillColor : "#eee",
+          emptyColor: "#171717",
+          speed    : 10,
+          size    : 300,
+          arcStart: 0   + 90,
+          arcEnd  : 360 + 90,
+
         });
 
         eva.replace()
 
 
-        setInterval(() => {
-          arcProgress.updateProgress({progress:Math.random()});
-        }, 1000);
+        // setInterval(() => {
+        //   arcProgress.updateProgress({progress:Math.random()});
+        // }, 1000);
 
     </script>
 
