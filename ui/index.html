@@ -213,6 +213,9 @@
 
     </div>
 
+    <audio id="audio_click"        src="sound_click.wav"        preload="auto"></audio>
+    <audio id="audio_notification" src="sound_notification.mp3" preload="auto"></audio>
+
     <script>
 
       const invoke = window.__TAURI__.invoke
@@ -221,9 +224,23 @@
       let current_time       = 50
       let tiiii              = current_time
       let hook_stop_crono    = null
-      var audio_click        = new Audio('sound_click.wav');
-      var audio_notification = new Audio('sound_notification.mp3');
+      // var audio_click        = new Audio('sound_click.wav');
+      // var audio_notification = new Audio('sound_notification.mp3');
       let pomodoro_name      = null
+
+      function play_audio_click()
+      {
+        const origAudio = document.getElementById("audio_click");
+        const newAudio  = origAudio.cloneNode()
+        newAudio.play()
+      }
+
+      function play_audio_notification()
+      {
+        const origAudio = document.getElementById("audio_notification");
+        const newAudio  = origAudio.cloneNode()
+        newAudio.play()
+      }
 
       function update_visuals()
       {
@@ -245,7 +262,8 @@
 
       function close_pop_up()
       {
-        audio_click.play()
+        // audio_click.play()
+        play_audio_click()
         for (let x of document.getElementsByClassName("overlay_container"))
         {
           x.style.display = "none"
@@ -266,7 +284,8 @@
 
       function cancel_pomodoro()
       {
-        audio_click.play()
+        // audio_click.play()
+        play_audio_click()
 
         // document.getElementsByClassName("overlay_container")[0].style.display = "none"
 
@@ -296,7 +315,8 @@
 
       function start_pomodoro()
       {
-        audio_click.play()
+        // audio_click.play()
+        play_audio_click()
 
         pomodoro_name = document.getElementById("input_pomodoro_name").value.trim()
         if (pomodoro_name == "" || pomodoro_name == null)
@@ -322,7 +342,8 @@
             update_visuals()
             tiiii = current_time;
             arcProgress.updateProgress({progress:1.0})
-            audio_notification.play();
+            // audio_notification.play();
+            play_audio_notification();
 
             invoke("annotate_pomodoro", {
               pomodoroName: pomodoro_name,
@@ -348,7 +369,8 @@
           return ""
           // WIP show popup
         }
-        audio_click.play()
+        // audio_click.play()
+        play_audio_click()
         current_mode = "not_started"
         update_visuals()
         tiiii = current_time;
@@ -372,7 +394,8 @@
           return ""
           // WIP show popup
         }
-        audio_click.play()
+        // audio_click.play()
+        play_audio_click()
         current_mode = "not_started"
         update_visuals()
         tiiii = current_time;
@@ -389,7 +412,8 @@
 
       function set_value_if_input(the_value)
       {
-        audio_click.play()
+        // audio_click.play()
+        play_audio_click()
         document.getElementById("input_pomodoro_name").value = the_value;
       }
 
