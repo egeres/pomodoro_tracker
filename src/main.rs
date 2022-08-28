@@ -20,6 +20,9 @@ use std::cmp::Ordering;
 
 fn save_json(filename:&String, data_to_save:&Vec<HashMap<String, String>>)
 {
+	// println!("Saving {}", filename);
+	// println!("{:?}", data_to_save);
+
 	let mut file = match File::create(filename) {
 		Ok(file) => file,
 		Err(e) => {
@@ -121,7 +124,7 @@ fn list_of_segments(path_dir:&String) -> Vec<Segment>
 
 	let files = list_files_in_folder(&path_dir).unwrap();
 	// for file in &files {
-	// println!("{}", file);
+	// println!("file: {}", file);
 	// }
 
 	let data_of_files_merged = files.iter().map(|file_name| {
@@ -148,26 +151,30 @@ fn list_of_segments(path_dir:&String) -> Vec<Segment>
 #[tauri::command]
 fn command_retrieve_last_pomodoros() -> Vec<String> {
 
-	println!("command_retrieve_last_pomodoros");
+	// List of segments
+	let mut _out = list_of_segments(&PATH_ROOT_FOLDER.to_string());
+	_out.sort();
 
-	vec![
-		"First" .to_string(),
-		"Second".to_string(),
-		"Third" .to_string(),
-	]
+	// We get the unique names of the segments
+	let mut unique_names : Vec<String> = Vec::new();
+	for i in _out.iter().rev() {
+		if !unique_names.contains(&i.name) {
+			unique_names.push(i.name.clone());
+		}
+	}
+
+	unique_names
 }
 
 #[tauri::command]
-fn annotate_pomodoro(pomodoro_name: String, duration:Option<i32>)
+fn annotate_pomodoro(pomodoro_name: String, duration:Option<i32>) -> Vec<String>
 {
 	let the_time : i32 = duration.unwrap_or(25);
-
-	// println!("annotate_pomodoro: {}", pomodoro_name);
 
 	let this_segment = Segment
 	{
 		start: Utc::now(),
-		end  : Utc::now() - chrono::Duration::seconds(the_time as i64),
+		end  : Utc::now() - chrono::Duration::minutes(the_time as i64),
 		name : pomodoro_name,
 	};
 
@@ -187,6 +194,22 @@ fn annotate_pomodoro(pomodoro_name: String, duration:Option<i32>)
 
 	for segment in all_segments.iter()
 	{
+		if all_segments.len() == 1
+		{
+			let filename         : String                       = format!("{}/{}.json", PATH_ROOT_FOLDER, current_stack_of_segments[0].start.format("%Y-%m-%d"));
+			let mut data_to_save : Vec<HashMap<String, String>> = Vec::new();
+			let s = segment;
+			// for s in current_stack_of_segments.iter()
+			// {
+			let mut item_map : HashMap<String, String> = HashMap::new();
+			item_map.insert("name" .to_string(), s.name.to_string());
+			item_map.insert("start".to_string(), s.start.format("%Y-%m-%d %H:%M:%S").to_string());
+			item_map.insert("end"  .to_string(), s.end  .format("%Y-%m-%d %H:%M:%S").to_string());
+			data_to_save.push(item_map);
+			// }
+			save_json(&filename, &data_to_save);
+		}
+
 		let left    = format!("{}", segment.start.format("%Y-%m-%d"));
 		// let right_0 = current_stack_of_segments[current_stack_of_segments.len() -1].start;
 		let right_0 = current_stack_of_segments.last();
@@ -208,12 +231,12 @@ fn annotate_pomodoro(pomodoro_name: String, duration:Option<i32>)
 			let filename         : String                       = format!("{}/{}.json", PATH_ROOT_FOLDER, current_stack_of_segments[0].start.format("%Y-%m-%d"));
 			let mut data_to_save : Vec<HashMap<String, String>> = Vec::new();
 			
-			for segment in current_stack_of_segments.iter()
+			for s in current_stack_of_segments.iter()
 			{
 				let mut item_map : HashMap<String, String> = HashMap::new();
-				item_map.insert("name".to_string(), segment.name.to_string());
-				item_map.insert("start".to_string(), segment.start.format("%Y-%m-%d %H:%M:%S").to_string());
-				item_map.insert("end"  .to_string(), segment.end  .format("%Y-%m-%d %H:%M:%S").to_string());
+				item_map.insert("name" .to_string(), s.name.to_string());
+				item_map.insert("start".to_string(), s.start.format("%Y-%m-%d %H:%M:%S").to_string());
+				item_map.insert("end"  .to_string(), s.end  .format("%Y-%m-%d %H:%M:%S").to_string());
 				data_to_save.push(item_map);
 			}
 
@@ -227,23 +250,35 @@ fn annotate_pomodoro(pomodoro_name: String, duration:Option<i32>)
 		{
 			let filename         : String                       = format!("{}/{}.json", PATH_ROOT_FOLDER, current_stack_of_segments[0].start.format("%Y-%m-%d"));
 			let mut data_to_save : Vec<HashMap<String, String>> = Vec::new();
-			for segment in current_stack_of_segments.iter()
+			for s in current_stack_of_segments.iter()
 			{
 				let mut item_map : HashMap<String, String> = HashMap::new();
-				item_map.insert("name".to_string(), segment.name.to_string());
-				item_map.insert("start".to_string(), segment.start.format("%Y-%m-%d %H:%M:%S").to_string());
-				item_map.insert("end"  .to_string(), segment.end  .format("%Y-%m-%d %H:%M:%S").to_string());
+				item_map.insert("name" .to_string(), s.name.to_string());
+				item_map.insert("start".to_string(), s.start.format("%Y-%m-%d %H:%M:%S").to_string());
+				item_map.insert("end"  .to_string(), s.end  .format("%Y-%m-%d %H:%M:%S").to_string());
 				data_to_save.push(item_map);
 			}
 			save_json(&filename, &data_to_save);
 		}
 	}
 
-	println!("Finishing...");
+	// // List of segments
+	// let mut _out = list_of_segments(&PATH_ROOT_FOLDER.to_string());
+	// _out.sort();
+
+	// We get the unique names of the segments
+	let mut unique_names : Vec<String> = Vec::new();
+	for i in all_segments.iter().rev() {
+		if !unique_names.contains(&i.name) {
+			unique_names.push(i.name.clone());
+		}
+	}
+
+	unique_names
 
 }
 
-static PATH_ROOT_FOLDER : &str = "data";
+static PATH_ROOT_FOLDER : &str = "C:/data_pomodoros";
 
 fn main() {
 
@@ -254,18 +289,18 @@ fn main() {
 		create_dir_all(&PATH_ROOT_FOLDER).unwrap();
 	}
 
-	// List of segments
-	let mut _out = list_of_segments(&PATH_ROOT_FOLDER.to_string());
-	_out.sort();
-	// for i in _out.iter() {println!("{:?}", i);}
+	// // List of segments
+	// let mut _out = list_of_segments(&PATH_ROOT_FOLDER.to_string());
+	// _out.sort();
+	// // for i in _out.iter() {println!("{:?}", i);}
 
-	// We get the unique names of the segments
-	let mut unique_names : Vec<String> = Vec::new();
-	for i in _out.iter().rev() {
-		if !unique_names.contains(&i.name) {
-			unique_names.push(i.name.clone());
-		}
-	}
+	// // We get the unique names of the segments
+	// let mut unique_names : Vec<String> = Vec::new();
+	// for i in _out.iter().rev() {
+	// 	if !unique_names.contains(&i.name) {
+	// 		unique_names.push(i.name.clone());
+	// 	}
+	// }
 	// print !("{:?}", unique_names);
 
 	// println!("Writting...");

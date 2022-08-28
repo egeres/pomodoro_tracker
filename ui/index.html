@@ -268,7 +268,10 @@
       {
         audio_click.play()
 
-        document.getElementsByClassName("overlay_container")[0].style.display = "none"
+        // document.getElementsByClassName("overlay_container")[0].style.display = "none"
+
+        close_pop_up()
+
         current_mode = "not_started"
         update_visuals()
 
@@ -282,6 +285,8 @@
           clearInterval(hook_stop_crono)
           hook_stop_crono = null
         }
+
+        arcProgress.updateProgress({progress:1.0})
       }
 
       function sleep(ms)
@@ -297,9 +302,6 @@
         if (pomodoro_name == "" || pomodoro_name == null)
         {
           return ""
-        }
-        else
-        {
           // WIP show popup
         }
         
@@ -324,8 +326,10 @@
 
             invoke("annotate_pomodoro", {
               pomodoroName: pomodoro_name,
-              duration    : 25,
-            }) 
+              duration    : current_time,
+            }).then(to_create => {
+              create_rows_left_panel(to_create)
+            })
           }
         }, 100)
 
@@ -338,25 +342,49 @@
       function start_retrospective_pomodoro_fill_untilnow()
       {
         close_pop_up()
-        
-        pomodoro_name = document.getElementById("input_pomodoro_name").value
+        pomodoro_name = document.getElementById("input_pomodoro_name").value.trim()
+        if (pomodoro_name == "" || pomodoro_name == null)
+        {
+          return ""
+          // WIP show popup
+        }
         audio_click.play()
         current_mode = "not_started"
         update_visuals()
         tiiii = current_time;
         arcProgress.updateProgress({progress:1.0})
+
+        invoke("annotate_pomodoro", {
+          pomodoroName: pomodoro_name,
+          duration    : current_time,
+        }).then(to_create => {
+          create_rows_left_panel(to_create)
+        })
+
       }
 
       function start_retrospective_pomodoro_justnow()
       {
         close_pop_up()
-
         pomodoro_name = document.getElementById("input_pomodoro_name").value
+        if (pomodoro_name == "" || pomodoro_name == null)
+        {
+          return ""
+          // WIP show popup
+        }
         audio_click.play()
         current_mode = "not_started"
         update_visuals()
         tiiii = current_time;
         arcProgress.updateProgress({progress:1.0})
+
+        invoke("annotate_pomodoro", {
+          pomodoroName: pomodoro_name,
+          duration    : current_time,
+        }).then(to_create => {
+          create_rows_left_panel(to_create)
+        })
+
       }
 
       function set_value_if_input(the_value)
@@ -368,6 +396,12 @@
       function create_rows_left_panel(list_of_names)
       {
           // console.log(list_of_names)
+
+          // Remove all children from list_of_events
+          while (document.getElementById("list_of_events").firstChild)
+          {
+            document.getElementById("list_of_events").removeChild(document.getElementById("list_of_events").firstChild);
+          }
 
           for (let x of list_of_names)
           {
@@ -406,7 +440,7 @@
       // create_rows_left_panel(["aaa", "bbb", "ccc"])
 
       invoke('command_retrieve_last_pomodoros').then(to_create => {
-        console.log(to_create)
+        // console.log(to_create)
         create_rows_left_panel(to_create)
       })
 
