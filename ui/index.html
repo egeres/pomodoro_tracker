@@ -34,7 +34,7 @@
 
       input[type=text] {
         font-size       : 20px;
-        background-color: #171717;
+        background-color: #222222;
         padding         : 10px;
         border-radius   : 5px;
         color           : #eee;
@@ -132,7 +132,7 @@
         /* width           : 500px;
         height          : 300px; */
         padding: 50px;
-        background-color: #171717;
+        background-color: #111111;
         border-radius   : 5px;
         display         : flex;
         flex-direction  : column;
@@ -144,6 +144,43 @@
     </style>
   </head>
   <body>
+
+    <div class="overlay_container noselect" id="overlay_config">
+      <div class="pop_up_dialog_box_with_gradient_borders">
+
+        <p id="overlay_text">Path to export long calendar data</p>
+
+        <input id="input_pomodoro_name" class="element_left" type="text" spellcheck="false">
+
+        <div>
+
+        <span id="icon_volume_on" onclick="mute()">
+          <i
+          data-eva        = "volume-up-outline"
+          data-eva-fill   = "#eee"
+          data-eva-height = "48"
+          data-eva-width  = "48"></i>
+        </span>
+
+        <span id="icon_volume_off" onclick="unmute()">
+          <i
+          data-eva        = "volume-off-outline"
+          data-eva-fill   = "#eee"
+          data-eva-height = "48"
+          data-eva-width  = "48"></i>
+        </span>
+
+        <i
+        onclick="close_pop_up()"
+        data-eva        = "close-outline"
+        data-eva-fill   = "#eee"
+        data-eva-height = "48"
+        data-eva-width  = "48"></i>
+
+        </div>
+
+      </div>
+    </div>
 
     <div class="overlay_container noselect" id="overlay_cancel_pomodoro">
       <div class="pop_up_dialog_box_with_gradient_borders">
@@ -173,8 +210,17 @@
       </div>
     </div>
 
+    <div style="position:absolute;top:20px;right:20px">
+      <i
+      onclick         = "show_menu_config()"
+      data-eva        = "menu-outline"
+      data-eva-fill   = "#eee"
+      data-eva-height = "48"
+      data-eva-width  = "48"></i>
+    </div>
+
     <div class="container_left">
-      <input id="input_pomodoro_name" class="element_left" type="text">
+      <input id="input_pomodoro_name" class="element_left" type="text" spellcheck="false">
       <div style="height:20px"></div>
       <div id="list_of_events"></div>
     </div>
@@ -218,8 +264,6 @@
 
     <script>
 
-      const invoke = window.__TAURI__.invoke
-
       let current_mode       = "not_started"
       let current_time       = 50
       let tiiii              = current_time
@@ -227,19 +271,26 @@
       // var audio_click        = new Audio('sound_click.wav');
       // var audio_notification = new Audio('sound_notification.mp3');
       let pomodoro_name      = null
+      let muted              = false;
 
       function play_audio_click()
       {
-        const origAudio = document.getElementById("audio_click");
-        const newAudio  = origAudio.cloneNode()
-        newAudio.play()
+        if (!muted)
+        {
+          const origAudio = document.getElementById("audio_click");
+          const newAudio  = origAudio.cloneNode()
+          newAudio.play()
+        }
       }
 
       function play_audio_notification()
       {
-        const origAudio = document.getElementById("audio_notification");
-        const newAudio  = origAudio.cloneNode()
-        newAudio.play()
+        if (!muted)
+        {
+          const origAudio = document.getElementById("audio_notification");
+          const newAudio  = origAudio.cloneNode()
+          newAudio.play()
+        }
       }
 
       function update_visuals()
@@ -280,6 +331,27 @@
       {
         audio_click.play()
         document.getElementById("overlay_retrospective_pomodoro").style.display = "flex"
+      }
+
+      function show_menu_config()
+      {
+        play_audio_click()
+        document.getElementById("overlay_config").style.display = "flex"
+      }
+
+      function mute()
+      {
+        muted = true;
+        document.getElementById("icon_volume_on" ).style.display = "none"
+        document.getElementById("icon_volume_off").style.display = "inline-block"
+      }
+
+      function unmute()
+      {
+        muted = false;
+        play_audio_click()
+        document.getElementById("icon_volume_off").style.display = "none"
+        document.getElementById("icon_volume_on" ).style.display = "inline-block"
       }
 
       function cancel_pomodoro()
@@ -460,14 +532,6 @@
 
       update_visuals()
 
-      // // For testing
-      // create_rows_left_panel(["aaa", "bbb", "ccc"])
-
-      invoke('command_retrieve_last_pomodoros').then(to_create => {
-        // console.log(to_create)
-        create_rows_left_panel(to_create)
-      })
-
       const node = document.getElementById("input_pomodoro_name");
       node.addEventListener("keyup", function(event) {
           if (event.key === "Enter") {
@@ -475,6 +539,12 @@
           }
       });
 
+      const invoke = window.__TAURI__.invoke;
+
+      invoke('command_retrieve_last_pomodoros').then(to_create => {
+        // console.log(to_create)
+        create_rows_left_panel(to_create)
+      })
 
     </script>
 
