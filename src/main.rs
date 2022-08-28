@@ -61,7 +61,7 @@ fn list_files_in_folder(folder_name: &str) -> Result<Vec<String>, String> {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Segment {
   name : String,
   start: DateTime<Utc>,
@@ -95,7 +95,7 @@ impl Eq for Segment {}
 // }
 
 // Create a list of segments with the info of the jsons in the data folder
-fn list_of_segments(path_dir:String) -> Vec<Segment>
+fn list_of_segments(path_dir:&String) -> Vec<Segment>
 {
 	let mut to_return : Vec<Segment> = Vec::new();
 
@@ -137,19 +137,56 @@ fn command_retrieve_last_pomodoros() -> Vec<String> {
 	]
 }
 
+#[tauri::command]
+fn annotate_pomodoro(pomodoro_name: String, duration:Option<i32>)
+{
+	let the_time : i32 = duration.unwrap_or(25);
+
+	// println!("annotate_pomodoro: {}", pomodoro_name);
+
+	let this_segment = Segment
+	{
+		start: Utc::now(),
+		end  : Utc::now() - chrono::Duration::seconds(the_time as i64),
+		name : pomodoro_name,
+	};
+
+	// We load the current information from scratch
+	if !Path::new(&PATH_ROOT_FOLDER).exists() {
+		create_dir_all(&PATH_ROOT_FOLDER).unwrap();
+	}
+
+	let mut all_segments = list_of_segments(&PATH_ROOT_FOLDER.to_string());
+	all_segments.sort();
+
+	let mut current_stack_of_segments : Vec<Segment> = vec![];
+	if all_segments.len() > 0 {
+		current_stack_of_segments.push(all_segments[0].clone());
+	}
+
+	for segment in all_segments.iter()
+	{
+		if format!("{}", segment.start.format("%Y-%m-%d")) == format!("{}", current_stack_of_segments[current_stack_of_segments.len() -1].start.format("%Y-%m-%d"))
+		{
+			current_stack_of_segments.push((*segment).clone());
+		}
+	}
+
+}
+
+static PATH_ROOT_FOLDER : &str = "data";
+
 fn main() {
 
 	println!("Starting...");
 
-	let path_root_folder = "data".to_string();
-
 	// Create path with intermediate folders if it doesn't exist
-	if !Path::new(&path_root_folder).exists() {
-		create_dir_all(&path_root_folder).unwrap();
+	if !Path::new(&PATH_ROOT_FOLDER).exists() {
+		create_dir_all(&PATH_ROOT_FOLDER).unwrap();
 	}
 
 	// List of segments
-	let mut _out = list_of_segments(path_root_folder);
+	let mut _out = list_of_segments(&PATH_ROOT_FOLDER.to_string());
 	_out.sort();
 	// for i in _out.iter() {println!("{:?}", i);}
 
@@ -168,6 +205,7 @@ fn main() {
 
 	tauri::Builder::default()
 		.invoke_handler(tauri::generate_handler![command_retrieve_last_pomodoros])
+		.invoke_handler(tauri::generate_handler![annotate_pomodoro])
 		.run(tauri::generate_context!())
 		.expect("error while running tauri application");
 
