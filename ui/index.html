@@ -141,19 +141,84 @@
         padding         : 20px;
       }
 
+      .container_options_colors
+      {
+        background-color: #222222;
+        padding         : 10px;
+        border-radius   : 5px;
+        width           : 100%;
+      }
+
+      .spacer_m
+      {
+        width : 10px;
+        height: 10px;
+      }
+
+      .spacer_l
+      {
+        width : 25px;
+        height: 25px;
+      }
+
+      .row_tablecolor
+      {
+        margin-top   : 10px;
+        margin-bottom: 10px;
+        padding      : 0;
+      }
+
+      .row_tablecolor:hover
+      {
+        background-color: #2e2e2e;
+      }
+
+      .row_text
+      {
+        display: inline;
+      }
+
+      .circle_color
+      {
+        display         : inline-block;
+        width           : 23px;
+        height          : 23px;
+        float           : right;
+        border-radius   : 50%;
+        background-color: red;
+      }
+
+      .x_is_to_close
+      {
+        margin-left: 10px;
+        display    : inline-block;
+        float      : right;
+      }
+
     </style>
   </head>
   <body>
 
-    <div class="overlay_container noselect" id="overlay_config">
-      <div class="pop_up_dialog_box_with_gradient_borders">
+    <div class="overlay_container noselect" id="overlay_config" style="display:flex">
+      <div class="pop_up_dialog_box_with_gradient_borders" style="width:80%">
 
-        <p id="overlay_text">Path to export long calendar data</p>
-
+        <p id="overlay_text" style="align-self: baseline;">Path to export long calendar data</p>
         <input id="input_pomodoro_name" class="element_left" type="text" spellcheck="false">
 
-        <div>
+        <!-- <div class="spacer_m"></div> -->
 
+        <p id="overlay_text" style="align-self: baseline;">Color scheme</p>
+        <div class="container_options_colors">
+          <div class="row_tablecolor"><div class="row_text">study > math          </div>  <div class="x_is_to_close">⨉</div> <div class="circle_color"></div>   </div>
+          <div class="row_tablecolor"><div class="row_text">study > language      </div>  <div class="x_is_to_close">⨉</div> <div class="circle_color"></div>   </div>
+          <div class="row_tablecolor"><div class="row_text">study > biology       </div>  <div class="x_is_to_close">⨉</div> <div class="circle_color"></div>   </div>
+          <div class="row_tablecolor"><div class="row_text">reading > ken follet  </div>  <div class="x_is_to_close">⨉</div> <div class="circle_color"></div>   </div>
+          <div class="row_tablecolor"><div class="row_text">reading > nora roberts</div>  <div class="x_is_to_close">⨉</div> <div class="circle_color"></div>   </div>
+        </div>
+
+        <div class="spacer_l"></div>
+
+        <div>
         <span id="icon_volume_on" onclick="mute()">
           <i
           data-eva        = "volume-up-outline"
@@ -161,22 +226,19 @@
           data-eva-height = "48"
           data-eva-width  = "48"></i>
         </span>
-
-        <span id="icon_volume_off" onclick="unmute()">
+        <span id="icon_volume_off" onclick="unmute()" style="display:none">
           <i
           data-eva        = "volume-off-outline"
           data-eva-fill   = "#eee"
           data-eva-height = "48"
           data-eva-width  = "48"></i>
         </span>
-
         <i
         onclick="close_pop_up()"
         data-eva        = "close-outline"
         data-eva-fill   = "#eee"
         data-eva-height = "48"
         data-eva-width  = "48"></i>
-
         </div>
 
       </div>
