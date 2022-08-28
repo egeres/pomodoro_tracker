@@ -432,7 +432,7 @@
               var new_row = document.createElement("div");
               new_row.classList.add("row");
               new_row.classList.add("noselect");
-              new_row.onclick   = (self) => { set_value_if_input(self.target.innerHTML); }
+              new_row.onclick   = (self) => { set_value_if_input(self.target.innerText); }
               new_row.innerHTML = x;
               document.getElementById("list_of_events").appendChild(new_row);
           }
@@ -467,6 +467,14 @@
         // console.log(to_create)
         create_rows_left_panel(to_create)
       })
+
+      const node = document.getElementById("input_pomodoro_name");
+      node.addEventListener("keyup", function(event) {
+          if (event.key === "Enter") {
+            start_pomodoro()
+          }
+      });
+
 
     </script>
 
