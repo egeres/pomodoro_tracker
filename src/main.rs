@@ -10,10 +10,30 @@
 use std::fs::*;
 use std::collections::HashMap;
 use std::io::Read;
+use std::io::Write;
 use chrono::{DateTime, Utc}; // TimeZone, NaiveDateTime
 use chrono::TimeZone;
 use std::path::Path;
 use std::cmp::Ordering;
+
+
+
+fn save_json(filename:&String, data_to_save:&Vec<HashMap<String, String>>)
+{
+	let mut file = match File::create(filename) {
+		Ok(file) => file,
+		Err(e) => {
+			println!("Error creating file: {:?}", e);
+			return;
+		}
+	};
+	let json_data = serde_json::to_string_pretty(&data_to_save).unwrap();
+	match file.write_all(json_data.as_bytes()) {
+		Ok(_) => println!("File saved successfully"),
+		Err(e) => println!("Error saving file: {:?}", e),
+	}
+}
+
 
 // parse json file to list of hashmaps
 fn load_json(file_name: &str) -> Result<Vec<HashMap<String, String>>, String> {
@@ -157,6 +177,7 @@ fn annotate_pomodoro(pomodoro_name: String, duration:Option<i32>)
 	}
 
 	let mut all_segments = list_of_segments(&PATH_ROOT_FOLDER.to_string());
+	all_segments.push(this_segment);
 	all_segments.sort();
 
 	let mut current_stack_of_segments : Vec<Segment> = vec![];
@@ -166,8 +187,40 @@ fn annotate_pomodoro(pomodoro_name: String, duration:Option<i32>)
 
 	for segment in all_segments.iter()
 	{
-		if format!("{}", segment.start.format("%Y-%m-%d")) == format!("{}", current_stack_of_segments[current_stack_of_segments.len() -1].start.format("%Y-%m-%d"))
+		let left    = format!("{}", segment.start.format("%Y-%m-%d"));
+		// let right_0 = current_stack_of_segments[current_stack_of_segments.len() -1].start;
+		let right_0 = current_stack_of_segments.last();
+		let right_1 = right_0.unwrap().start;
+		let right   = format!("{}", right_1.format("%Y-%m-%d"));
+
+		if left == right
 		{
+			current_stack_of_segments.push((*segment).clone());
+		}
+		else
+		{
+			let filename         : String                       = format!("{}/{}.json", PATH_ROOT_FOLDER, current_stack_of_segments[0].start.format("%Y-%m-%d"));
+			let mut data_to_save : Vec<HashMap<String, String>> = Vec::new();
+			
+			for segment in current_stack_of_segments.iter()
+			{
+				let mut item_map : HashMap<String, String> = HashMap::new();
+				item_map.insert("name".to_string(), segment.name.to_string());
+				item_map.insert("start".to_string(), segment.start.format("%Y-%m-%d %H:%M:%S").to_string());
+				item_map.insert("end"  .to_string(), segment.end  .format("%Y-%m-%d %H:%M:%S").to_string());
+				data_to_save.push(item_map);
+			}
+
+			// fn save_json(filename:&String, data_to_save:&Vec<HashMap<String, String>>)
+			// {
+			// 	let mut file = File::create(filename).unwrap();
+			// 	let mut ser = serde_json::Serializer::new(&mut file);
+			// 	serde_json::ser::to_writer(&mut ser, &data_to_save).unwrap();
+			// }
+
+			save_json(&filename, &data_to_save);
+
+			current_stack_of_segments = Vec::new();
 			current_stack_of_segments.push((*segment).clone());
 		}
 	}
