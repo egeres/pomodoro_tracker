@@ -193,6 +193,12 @@ fn annotate_pomodoro(pomodoro_name: String, duration:Option<i32>)
 		let right_1 = right_0.unwrap().start;
 		let right   = format!("{}", right_1.format("%Y-%m-%d"));
 
+		if current_stack_of_segments.len() > 0 {
+			if current_stack_of_segments.last().unwrap() == segment {
+				continue;
+			}
+		}
+
 		if left == right
 		{
 			current_stack_of_segments.push((*segment).clone());
@@ -211,19 +217,29 @@ fn annotate_pomodoro(pomodoro_name: String, duration:Option<i32>)
 				data_to_save.push(item_map);
 			}
 
-			// fn save_json(filename:&String, data_to_save:&Vec<HashMap<String, String>>)
-			// {
-			// 	let mut file = File::create(filename).unwrap();
-			// 	let mut ser = serde_json::Serializer::new(&mut file);
-			// 	serde_json::ser::to_writer(&mut ser, &data_to_save).unwrap();
-			// }
-
 			save_json(&filename, &data_to_save);
 
 			current_stack_of_segments = Vec::new();
 			current_stack_of_segments.push((*segment).clone());
 		}
+
+		if current_stack_of_segments.len() > 0
+		{
+			let filename         : String                       = format!("{}/{}.json", PATH_ROOT_FOLDER, current_stack_of_segments[0].start.format("%Y-%m-%d"));
+			let mut data_to_save : Vec<HashMap<String, String>> = Vec::new();
+			for segment in current_stack_of_segments.iter()
+			{
+				let mut item_map : HashMap<String, String> = HashMap::new();
+				item_map.insert("name".to_string(), segment.name.to_string());
+				item_map.insert("start".to_string(), segment.start.format("%Y-%m-%d %H:%M:%S").to_string());
+				item_map.insert("end"  .to_string(), segment.end  .format("%Y-%m-%d %H:%M:%S").to_string());
+				data_to_save.push(item_map);
+			}
+			save_json(&filename, &data_to_save);
+		}
 	}
+
+	println!("Finishing...");
 
 }
 
@@ -252,13 +268,16 @@ fn main() {
 	}
 	// print !("{:?}", unique_names);
 
-
+	// println!("Writting...");
+	// annotate_pomodoro("First".to_string(), None);
 
 	let _o = 0;
 
 	tauri::Builder::default()
-		.invoke_handler(tauri::generate_handler![command_retrieve_last_pomodoros])
-		.invoke_handler(tauri::generate_handler![annotate_pomodoro])
+		.invoke_handler(tauri::generate_handler![
+			command_retrieve_last_pomodoros,
+			annotate_pomodoro,
+		])
 		.run(tauri::generate_context!())
 		.expect("error while running tauri application");
 

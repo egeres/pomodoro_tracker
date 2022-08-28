@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="arc-progress.min.js"></script>
     <script src="eva.min.js"></script>
-    <title>🍅</title>
+    <title></title>
     <style>
 
       body, html {
@@ -292,11 +292,19 @@
       function start_pomodoro()
       {
         audio_click.play()
+
+        pomodoro_name = document.getElementById("input_pomodoro_name").value.trim()
+        if (pomodoro_name == "" || pomodoro_name == null)
+        {
+          return ""
+        }
+        else
+        {
+          // WIP show popup
+        }
         
         current_mode = "running"
         update_visuals()
-
-        pomodoro_name = document.getElementById("input_pomodoro_name").value
 
         let my_interval = setInterval(() => {
           if (tiiii > 0)
@@ -313,6 +321,11 @@
             tiiii = current_time;
             arcProgress.updateProgress({progress:1.0})
             audio_notification.play();
+
+            invoke("annotate_pomodoro", {
+              pomodoroName: pomodoro_name,
+              duration    : 25,
+            }) 
           }
         }, 100)
 
