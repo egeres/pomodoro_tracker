@@ -149,6 +149,10 @@
       <div class="pop_up_dialog_box_with_gradient_borders">
         <p id="overlay_text">Are you sure you want to cancel the current pomodoro?</p>
         <div>
+          <!-- <div id="easteregg" style="display:inline">
+            <div class="button_a" onclick="cancel_pomodoro()" style="color:rgb(255, 94, 0)">Yes (but in orange)</div>
+            <div style="display:inline-block;min-width:20px"></div>
+          </div> -->
           <div class="button_a" onclick="cancel_pomodoro()">Yes</div>
           <div style="display:inline-block;min-width:20px"></div>
           <div class="button_a" onclick="close_pop_up()">No</div>
@@ -211,159 +215,151 @@
 
     <script>
 
-        let current_mode       = "not_started"
-        let current_time       = 50
-        let tiiii              = current_time
-        let hook_stop_crono    = null
-        var audio_click        = new Audio('sound_click.wav');
-        var audio_notification = new Audio('sound_notification.mp3');
-        let pomodoro_name      = null
+      const invoke = window.__TAURI__.invoke
 
-        function update_visuals()
+      let current_mode       = "not_started"
+      let current_time       = 50
+      let tiiii              = current_time
+      let hook_stop_crono    = null
+      var audio_click        = new Audio('sound_click.wav');
+      var audio_notification = new Audio('sound_notification.mp3');
+      let pomodoro_name      = null
+
+      function update_visuals()
+      {
+        if (current_mode == "not_started")
         {
-          if (current_mode == "not_started")
-          {
-            document.getElementById("container_repeat").style.display = "inline-block"
-            document.getElementById("container_stop")  .style.display = "none"
-            document.getElementById("container_play")  .style.display = "inline-block"
-          }
-          if (current_mode == "running")
-          {
-            document.getElementById("container_repeat").style.display = "none"
-            document.getElementById("container_stop")  .style.display = "inline-block"
-            document.getElementById("container_play")  .style.display = "none"
-          }
-
-          document.getElementById("remaining_minutes").innerHTML = current_time
+          document.getElementById("container_repeat").style.display = "inline-block"
+          document.getElementById("container_stop")  .style.display = "none"
+          document.getElementById("container_play")  .style.display = "inline-block"
+        }
+        if (current_mode == "running")
+        {
+          document.getElementById("container_repeat").style.display = "none"
+          document.getElementById("container_stop")  .style.display = "inline-block"
+          document.getElementById("container_play")  .style.display = "none"
         }
 
-        function close_pop_up()
+        document.getElementById("remaining_minutes").innerHTML = current_time
+      }
+
+      function close_pop_up()
+      {
+        audio_click.play()
+        for (let x of document.getElementsByClassName("overlay_container"))
         {
-          audio_click.play()
-          for (let x of document.getElementsByClassName("overlay_container"))
-          {
-            x.style.display = "none"
-          }
+          x.style.display = "none"
         }
+      }
 
-        function query_cancel_pomodoro()
-        {
-          audio_click.play()
-          document.getElementById("overlay_cancel_pomodoro").style.display = "flex"
-        }
+      function query_cancel_pomodoro()
+      {
+        audio_click.play()
+        document.getElementById("overlay_cancel_pomodoro").style.display = "flex"
+      }
 
-        function query_retrospective_pomodoro()
-        {
-          audio_click.play()
-          document.getElementById("overlay_retrospective_pomodoro").style.display = "flex"
-        }
-        
-        function cancel_pomodoro()
-        {
-          audio_click.play()
+      function query_retrospective_pomodoro()
+      {
+        audio_click.play()
+        document.getElementById("overlay_retrospective_pomodoro").style.display = "flex"
+      }
 
-          document.getElementsByClassName("overlay_container")[0].style.display = "none"
-          current_mode = "not_started"
-          update_visuals()
+      function cancel_pomodoro()
+      {
+        audio_click.play()
 
-          console.log(hook_stop_crono)
-
-          if (hook_stop_crono != null)
-          {
-            clearInterval(hook_stop_crono)
-            hook_stop_crono = null
-          }
-
-          arcProgress.updateProgress({progress:1.0})
-
-          tiiii = current_time
-        }
-
-        function sleep(ms)
-        {
-            return new Promise((resolve) => { setTimeout(resolve, ms); });
-        }
-
-        function start_pomodoro()
-        {
-          audio_click.play()
-          
-          current_mode = "running"
-          update_visuals()
-
-          pomodoro_name = document.getElementById("input_pomodoro_name").value
-
-
-          let my_interval = setInterval(() => {
-            if (tiiii > 0)
-            {
-              tiiii--
-              document.getElementById("remaining_minutes").innerHTML = tiiii
-              arcProgress.updateProgress({progress:tiiii/current_time})
-            }
-            else
-            {
-              clearInterval(my_interval)
-              current_mode = "not_started"
-              update_visuals()
-              tiiii = current_time;
-              arcProgress.updateProgress({progress:1.0})
-              audio_notification.play();
-            }
-          }, 100)
-
-          return my_interval
-
-          // current_mode = "not_started"
-          // update_visuals()
-        }
-
-        function start_retrospective_pomodoro_fill_untilnow()
-        {
-          pomodoro_name = document.getElementById("input_pomodoro_name").value
-          audio_click.play()
-          current_mode = "not_started"
-          update_visuals()
-          tiiii = current_time;
-          arcProgress.updateProgress({progress:1.0})
-        }
-
-        function start_retrospective_pomodoro_justnow()
-        {
-          pomodoro_name = document.getElementById("input_pomodoro_name").value
-          audio_click.play()
-          current_mode = "not_started"
-          update_visuals()
-          tiiii = current_time;
-          arcProgress.updateProgress({progress:1.0})
-        }
-
-        const customText = [{
-          color: '#000',
-          x    : 150,
-          y    : 150,
-        }];
-
-        const arcProgress = new ArcProgress({
-          el        : '#progress-container',
-          progress  : 1.0,
-          fillColor : "#eee",
-          emptyColor: "#171717",
-          speed    : 10,
-          size    : 300,
-          arcStart: 0   + 90,
-          arcEnd  : 360 + 90,
-
-        });
-
-        eva.replace()
+        document.getElementsByClassName("overlay_container")[0].style.display = "none"
+        current_mode = "not_started"
         update_visuals()
 
-    </script>
+        console.log(hook_stop_crono)
 
-    <script>
+        if (hook_stop_crono != null)
+        {
+          clearInterval(hook_stop_crono)
+          hook_stop_crono = null
+        }
 
-      const invoke = window.__TAURI__.invoke
+        arcProgress.updateProgress({progress:1.0})
+
+        tiiii = current_time
+      }
+
+      function sleep(ms)
+      {
+          return new Promise((resolve) => { setTimeout(resolve, ms); });
+      }
+
+      function start_pomodoro()
+      {
+        audio_click.play()
+        
+        current_mode = "running"
+        update_visuals()
+
+        pomodoro_name = document.getElementById("input_pomodoro_name").value
+
+        let my_interval = setInterval(() => {
+          if (tiiii > 0)
+          {
+            tiiii--
+            document.getElementById("remaining_minutes").innerHTML = tiiii
+            arcProgress.updateProgress({progress:tiiii/current_time})
+          }
+          else
+          {
+            clearInterval(my_interval)
+            current_mode = "not_started"
+            update_visuals()
+            tiiii = current_time;
+            arcProgress.updateProgress({progress:1.0})
+            audio_notification.play();
+          }
+        }, 100)
+
+        return my_interval
+
+        // current_mode = "not_started"
+        // update_visuals()
+      }
+
+      function start_retrospective_pomodoro_fill_untilnow()
+      {
+        pomodoro_name = document.getElementById("input_pomodoro_name").value
+        audio_click.play()
+        current_mode = "not_started"
+        update_visuals()
+        tiiii = current_time;
+        arcProgress.updateProgress({progress:1.0})
+      }
+
+      function start_retrospective_pomodoro_justnow()
+      {
+        pomodoro_name = document.getElementById("input_pomodoro_name").value
+        audio_click.play()
+        current_mode = "not_started"
+        update_visuals()
+        tiiii = current_time;
+        arcProgress.updateProgress({progress:1.0})
+      }
+
+      const customText = [{
+        color: '#000',
+        x    : 150,
+        y    : 150,
+      }];
+
+      const arcProgress = new ArcProgress({
+        el        : '#progress-container',
+        progress  : 1.0,
+        fillColor : "#eee",
+        emptyColor: "#171717",
+        speed    : 10,
+        size    : 300,
+        arcStart: 0   + 90,
+        arcEnd  : 360 + 90,
+
+      });
 
       function set_value_if_input(the_value)
       {
@@ -386,6 +382,10 @@
           }
       }
 
+      eva.replace()
+
+      update_visuals()
+
       // // For testing
       // create_rows_left_panel(["aaa", "bbb", "ccc"])
 
@@ -393,7 +393,6 @@
         console.log(to_create)
         create_rows_left_panel(to_create)
       })
-
 
     </script>
 
