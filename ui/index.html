@@ -145,13 +145,26 @@
   </head>
   <body>
 
-    <div class="overlay_container noselect">
+    <div class="overlay_container noselect" id="overlay_cancel_pomodoro">
       <div class="pop_up_dialog_box_with_gradient_borders">
         <p id="overlay_text">Are you sure you want to cancel the current pomodoro?</p>
         <div>
           <div class="button_a" onclick="cancel_pomodoro()">Yes</div>
           <div style="display:inline-block;min-width:20px"></div>
           <div class="button_a" onclick="close_pop_up()">No</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay_container noselect" id="overlay_retrospective_pomodoro">
+      <div class="pop_up_dialog_box_with_gradient_borders">
+        <p id="overlay_text">What kind of previous pomodoro do you want to annotate?</p>
+        <div>
+          <div class="button_a" onclick="start_retrospective_pomodoro_fill_untilnow()">Fill until now</div>
+          <div style="display:inline-block;min-width:20px"></div>
+          <div class="button_a" onclick="start_retrospective_pomodoro_justnow()">Just add one now</div>
+          <div style="display:inline-block;min-width:20px"></div>
+          <div class="button_a" onclick="close_pop_up()">Cancel</div>
         </div>
       </div>
     </div>
@@ -169,8 +182,6 @@
 
       <h1 id="remaining_minutes">25</h1>
 
-      <!-- <button id="play"></button> -->
-
       <div>
         <span id="container_repeat" onclick="query_retrospective_pomodoro()">
           <i
@@ -186,7 +197,7 @@
           data-eva-height = "48"
           data-eva-width  = "48"></i>
         </span>
-        <span id="container_play" onclick="hook_stop_crono = start_crono()">
+        <span id="container_play" onclick="hook_stop_crono = start_pomodoro()">
           <i
           data-eva        = "play-circle-outline"
           data-eva-fill   = "#eee"
@@ -200,10 +211,13 @@
 
     <script>
 
-        let current_mode    = "not_started"
-        let current_time    = 50
-        let tiiii           = current_time
-        let hook_stop_crono = null
+        let current_mode       = "not_started"
+        let current_time       = 50
+        let tiiii              = current_time
+        let hook_stop_crono    = null
+        var audio_click        = new Audio('sound_click.wav');
+        var audio_notification = new Audio('sound_notification.mp3');
+        let pomodoro_name      = null
 
         function update_visuals()
         {
@@ -225,23 +239,29 @@
 
         function close_pop_up()
         {
-          document.getElementsByClassName("overlay_container")[0].style.display = "none"
+          audio_click.play()
+          for (let x of document.getElementsByClassName("overlay_container"))
+          {
+            x.style.display = "none"
+          }
         }
 
         function query_cancel_pomodoro()
         {
-          document.getElementsByClassName("overlay_container")[0].style.display = "flex"
-          document.getElementById("overlay_text").innerHTML = "Are you sure you want to cancel the current pomodoro?"
+          audio_click.play()
+          document.getElementById("overlay_cancel_pomodoro").style.display = "flex"
         }
 
         function query_retrospective_pomodoro()
         {
-          document.getElementsByClassName("overlay_container")[0].style.display = "flex"
-          document.getElementById("overlay_text").innerHTML = "Are you sure you want to annotate a retrospective pomodoro?"
+          audio_click.play()
+          document.getElementById("overlay_retrospective_pomodoro").style.display = "flex"
         }
         
         function cancel_pomodoro()
         {
+          audio_click.play()
+
           document.getElementsByClassName("overlay_container")[0].style.display = "none"
           current_mode = "not_started"
           update_visuals()
@@ -264,21 +284,15 @@
             return new Promise((resolve) => { setTimeout(resolve, ms); });
         }
 
-        function start_crono()
+        function start_pomodoro()
         {
+          audio_click.play()
+          
           current_mode = "running"
           update_visuals()
 
-          // for (let i = current_time; i > 0; i--) {
-          //   await sleep(60 * 10);
-          //   let j = i - 1
-          //   console.log(j)
-          //   console.log(j / current_time)
-          //   document.getElementById("remaining_minutes").innerHTML = j
-          //   arcProgress.updateProgress({progress:j/current_time})
-          // }
+          pomodoro_name = document.getElementById("input_pomodoro_name").value
 
-          console.log("...")
 
           let my_interval = setInterval(() => {
             if (tiiii > 0)
@@ -286,21 +300,15 @@
               tiiii--
               document.getElementById("remaining_minutes").innerHTML = tiiii
               arcProgress.updateProgress({progress:tiiii/current_time})
-              // update_visuals()
             }
             else
             {
               clearInterval(my_interval)
-              // current_mode = "not_started"
-              // update_visuals()
-
               current_mode = "not_started"
               update_visuals()
-
               tiiii = current_time;
               arcProgress.updateProgress({progress:1.0})
-              var audio = new Audio('notification.mp3');
-              audio.play();
+              audio_notification.play();
             }
           }, 100)
 
@@ -308,6 +316,26 @@
 
           // current_mode = "not_started"
           // update_visuals()
+        }
+
+        function start_retrospective_pomodoro_fill_untilnow()
+        {
+          pomodoro_name = document.getElementById("input_pomodoro_name").value
+          audio_click.play()
+          current_mode = "not_started"
+          update_visuals()
+          tiiii = current_time;
+          arcProgress.updateProgress({progress:1.0})
+        }
+
+        function start_retrospective_pomodoro_justnow()
+        {
+          pomodoro_name = document.getElementById("input_pomodoro_name").value
+          audio_click.play()
+          current_mode = "not_started"
+          update_visuals()
+          tiiii = current_time;
+          arcProgress.updateProgress({progress:1.0})
         }
 
         const customText = [{
@@ -339,6 +367,7 @@
 
       function set_value_if_input(the_value)
       {
+        audio_click.play()
         document.getElementById("input_pomodoro_name").value = the_value;
       }
 
