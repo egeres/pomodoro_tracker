@@ -195,26 +195,30 @@
         float      : right;
       }
 
+      h1
+      {
+        font-size: 30px;
+      }
+
     </style>
   </head>
   <body>
-
-    <div class="overlay_container noselect" id="overlay_config" style="display:flex">
+    
+    <div class="overlay_container noselect" id="overlay_config" style="display:none">
       <div class="pop_up_dialog_box_with_gradient_borders" style="width:80%">
 
         <p id="overlay_text" style="align-self: baseline;">Path to export long calendar data</p>
-        <input id="input_pomodoro_name" class="element_left" type="text" spellcheck="false">
+        <input id="input_path_to_export_lc" class="element_left" type="text" spellcheck="false">
 
         <!-- <div class="spacer_m"></div> -->
-
-        <p id="overlay_text" style="align-self: baseline;">Color scheme</p>
+        <!-- <p id="overlay_text" style="align-self: baseline;">Color scheme</p>
         <div class="container_options_colors">
           <div class="row_tablecolor"><div class="row_text">study > math          </div>  <div class="x_is_to_close">⨉</div> <div class="circle_color"></div>   </div>
           <div class="row_tablecolor"><div class="row_text">study > language      </div>  <div class="x_is_to_close">⨉</div> <div class="circle_color"></div>   </div>
           <div class="row_tablecolor"><div class="row_text">study > biology       </div>  <div class="x_is_to_close">⨉</div> <div class="circle_color"></div>   </div>
           <div class="row_tablecolor"><div class="row_text">reading > ken follet  </div>  <div class="x_is_to_close">⨉</div> <div class="circle_color"></div>   </div>
           <div class="row_tablecolor"><div class="row_text">reading > nora roberts</div>  <div class="x_is_to_close">⨉</div> <div class="circle_color"></div>   </div>
-        </div>
+        </div> -->
 
         <div class="spacer_l"></div>
 
@@ -309,7 +313,7 @@
           data-eva-height = "48"
           data-eva-width  = "48"></i>
         </span>
-        <span id="container_play" onclick="hook_stop_crono = start_pomodoro()">
+        <span id="container_play" onclick="hook_stop_crono=start_pomodoro()">
           <i
           data-eva        = "play-circle-outline"
           data-eva-fill   = "#eee"
@@ -326,14 +330,14 @@
 
     <script>
 
-      let current_mode       = "not_started"
-      let current_time       = 50
-      let tiiii              = current_time
-      let hook_stop_crono    = null
-      // var audio_click        = new Audio('sound_click.wav');
-      // var audio_notification = new Audio('sound_notification.mp3');
-      let pomodoro_name      = null
-      let muted              = false;
+      let current_mode      = "not_started"
+      let time_sec_pomodoro = 50
+      let time_sec_current  = time_sec_pomodoro
+      let hook_stop_crono   = null
+      let pomodoro_name     = null
+      let muted             = false;
+
+      // Ctrl+K, 4 makes this easier to be read
 
       function play_audio_click()
       {
@@ -357,6 +361,8 @@
 
       function update_visuals()
       {
+        console.log("time_sec_pomodoro", time_sec_pomodoro);
+
         if (current_mode == "not_started")
         {
           document.getElementById("container_repeat").style.display = "inline-block"
@@ -369,13 +375,11 @@
           document.getElementById("container_stop")  .style.display = "inline-block"
           document.getElementById("container_play")  .style.display = "none"
         }
-
-        document.getElementById("remaining_minutes").innerHTML = current_time
+        document.getElementById("remaining_minutes").innerHTML = Math.ceil(time_sec_pomodoro/ 60.0)
       }
 
       function close_pop_up()
       {
-        // audio_click.play()
         play_audio_click()
         for (let x of document.getElementsByClassName("overlay_container"))
         {
@@ -385,13 +389,13 @@
 
       function query_cancel_pomodoro()
       {
-        audio_click.play()
+        play_audio_click()
         document.getElementById("overlay_cancel_pomodoro").style.display = "flex"
       }
 
       function query_retrospective_pomodoro()
       {
-        audio_click.play()
+        play_audio_click()
         document.getElementById("overlay_retrospective_pomodoro").style.display = "flex"
       }
 
@@ -418,20 +422,16 @@
 
       function cancel_pomodoro()
       {
-        // audio_click.play()
         play_audio_click()
-
-        // document.getElementsByClassName("overlay_container")[0].style.display = "none"
 
         close_pop_up()
 
         current_mode = "not_started"
+
         update_visuals()
 
-        // console.log(hook_stop_crono)
-
         arcProgress.updateProgress({progress:1.0})
-        tiiii = current_time
+        time_sec_current = time_sec_pomodoro
 
         if (hook_stop_crono != null)
         {
@@ -449,12 +449,14 @@
 
       function start_pomodoro()
       {
-        // audio_click.play()
+        console.log("start_pomodoro()");
+
         play_audio_click()
 
         pomodoro_name = document.getElementById("input_pomodoro_name").value.trim()
         if (pomodoro_name == "" || pomodoro_name == null)
         {
+          console.log("no input...")
           return ""
           // WIP show popup
         }
@@ -462,40 +464,49 @@
         current_mode = "running"
         update_visuals()
 
-        let my_interval = setInterval(() => {
-          if (tiiii > 0)
+        let interval_timer = setInterval(() => {
+
+          console.log("...")
+          if (time_sec_current > 0)
           {
-            tiiii--
-            document.getElementById("remaining_minutes").innerHTML = tiiii
-            arcProgress.updateProgress({progress:tiiii/current_time})
+            time_sec_current--
+            document.getElementById("remaining_minutes").innerHTML = Math.ceil(time_sec_current/ 60.0)
+            arcProgress.updateProgress({progress:time_sec_current/time_sec_pomodoro})
           }
           else
           {
-            clearInterval(my_interval)
-            current_mode = "not_started"
-            update_visuals()
-            tiiii = current_time;
+            clearInterval(interval_timer)
+            current_mode     = "not_started"
+            time_sec_current = time_sec_pomodoro;
             arcProgress.updateProgress({progress:1.0})
-            // audio_notification.play();
-            play_audio_notification();
-
+            update_visuals()
+            play_audio_notification()
             invoke("annotate_pomodoro", {
-              pomodoroName: pomodoro_name,
-              duration    : current_time,
+              pomodoroName : pomodoro_name,
+              durationInMin: Math.floor(time_sec_pomodoro / 60.0),
             }).then(to_create => {
               create_rows_left_panel(to_create)
             })
           }
-        }, 100)
+        }, 1000)
 
-        return my_interval
+        return interval_timer
 
-        // current_mode = "not_started"
-        // update_visuals()
       }
 
-      function start_retrospective_pomodoro_fill_untilnow()
+      async function start_retrospective_pomodoro_fill_untilnow()
       {
+
+        let minutes_ago = 25;
+        let last_date = await invoke("get_last_date_of_segment");
+        if (last_date !== "")
+        {
+          minutes_ago = Math.floor((new Date() - new Date(last_date)) / 1000 / 60) - 2;
+        }
+
+
+        // return;
+
         close_pop_up()
         pomodoro_name = document.getElementById("input_pomodoro_name").value.trim()
         if (pomodoro_name == "" || pomodoro_name == null)
@@ -503,16 +514,15 @@
           return ""
           // WIP show popup
         }
-        // audio_click.play()
         play_audio_click()
         current_mode = "not_started"
         update_visuals()
-        tiiii = current_time;
+        time_sec_current = time_sec_pomodoro;
         arcProgress.updateProgress({progress:1.0})
 
         invoke("annotate_pomodoro", {
-          pomodoroName: pomodoro_name,
-          duration    : current_time,
+          pomodoroName : pomodoro_name,
+          durationInMin: minutes_ago  ,
         }).then(to_create => {
           create_rows_left_panel(to_create)
         })
@@ -528,16 +538,15 @@
           return ""
           // WIP show popup
         }
-        // audio_click.play()
         play_audio_click()
         current_mode = "not_started"
         update_visuals()
-        tiiii = current_time;
+        time_sec_current = time_sec_pomodoro;
         arcProgress.updateProgress({progress:1.0})
 
         invoke("annotate_pomodoro", {
-          pomodoroName: pomodoro_name,
-          duration    : current_time,
+          pomodoroName : pomodoro_name,
+          durationInMin: Math.floor(time_sec_pomodoro / 60),
         }).then(to_create => {
           create_rows_left_panel(to_create)
         })
@@ -546,7 +555,6 @@
 
       function set_value_if_input(the_value)
       {
-        // audio_click.play()
         play_audio_click()
         document.getElementById("input_pomodoro_name").value = the_value;
       }
@@ -583,19 +591,15 @@
         progress  : 1.0,
         fillColor : "#eee",
         emptyColor: "#171717",
-        speed    : 10,
-        size    : 300,
-        arcStart: 0   + 90,
-        arcEnd  : 360 + 90,
-
+        speed     : 10 ,
+        size      : 300,
+        arcStart  : 0   + 90,
+        arcEnd    : 360 + 90,
       });
 
       eva.replace()
 
-      update_visuals()
-
-      const node = document.getElementById("input_pomodoro_name");
-      node.addEventListener("keyup", function(event) {
+      document.getElementById("input_pomodoro_name").addEventListener("keyup", function(event) {
           if (event.key === "Enter") {
             start_pomodoro()
           }
@@ -604,8 +608,14 @@
       const invoke = window.__TAURI__.invoke;
 
       invoke('command_retrieve_last_pomodoros').then(to_create => {
-        // console.log(to_create)
         create_rows_left_panel(to_create)
+      })
+
+      invoke("conf_get_time_pomodoro_in_min", {}).then(time => {
+        time_sec_pomodoro = Math.floor(time * 60);
+        time_sec_current  = time_sec_pomodoro;
+        update_visuals();
+        setTimeout(() => {update_visuals();}, 100); // Just in case...
       })
 
     </script>
