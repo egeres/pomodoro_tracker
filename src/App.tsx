@@ -30,10 +30,10 @@ class App extends React.Component {
   {
     if (!this.muted)
     {
-      // const origAudio = document.getElementById("audio_click");
-      // const newAudio  = origAudio.cloneNode()
-      // // @ts-ignore
-      // newAudio.play()
+      const origAudio = document.getElementById("audio_click");
+      const newAudio  = origAudio.cloneNode()
+      // @ts-ignore
+      newAudio.play()
     }
   }
 
@@ -41,10 +41,10 @@ class App extends React.Component {
   {
     if (!this.muted)
     {
-      // const origAudio = document.getElementById("audio_notification");
-      // const newAudio  = origAudio.cloneNode()
-      // // @ts-ignore
-      // newAudio.play()
+      const origAudio = document.getElementById("audio_notification");
+      const newAudio  = origAudio.cloneNode()
+      // @ts-ignore
+      newAudio.play()
     }
   }
 
@@ -420,8 +420,8 @@ class App extends React.Component {
 
       </div>
 
-      {/* <audio id="audio_click"        src="./public/sound_click.wav"        preload="auto"></audio>
-      <audio id="audio_notification" src="./public/sound_notification.mp3" preload="auto"></audio> */}
+      <audio id="audio_click"        src="./sound_click.wav"        preload="auto"></audio>
+      <audio id="audio_notification" src="./sound_notification.mp3" preload="auto"></audio>
 
     </div>
   )
