@@ -1,6 +1,6 @@
 
 import './App.css'
-import ArcProgress from 'react-arc-progress';
+import MyArc from './MyArc';
 import * as eva from 'eva-icons';
 import React from 'react';
 import { invoke } from '@tauri-apps/api';
@@ -374,7 +374,7 @@ class App extends React.Component {
       <div className="container_right noselect">
 
       <div id="progress-container">
-        <ArcProgress
+        {/* <ArcProgress
             // @ts-ignore
             progress   = {this.state.progress}
             size       = {300}
@@ -383,7 +383,13 @@ class App extends React.Component {
             emptyColor = {'#171717'}
             arcStart   = {0   + 90}
             arcEnd     = {360 + 90}
+        /> */}
+
+        <MyArc
+          // @ts-ignore
+          progress = {this.state.progress}
         />
+
       </div>
 
       <h1 id="remaining_minutes">--</h1>
