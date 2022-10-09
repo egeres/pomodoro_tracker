@@ -1,0 +1,201 @@
+body, html {
+  font-size       : 20px;
+  margin          : 0;
+  background-color: black;
+  color           : #eee;
+  font-family     : sans-serif;
+  min-height      : 100%;
+  height          : 100%;
+  overflow        : hidden;
+  background-image: url("./assets/painting.png");
+  background-size : cover;
+}
+
+.App {
+  width : 100%;
+  height: 100%;
+}
+
+#root {
+  width : 100%;
+  height: 100%;
+}
+
+
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select  : none; /* Safari */
+  -khtml-user-select   : none; /* Konqueror HTML */
+  -moz-user-select     : none; /* Old versions of Firefox */
+  -ms-user-select      : none; /* Internet Explorer/Edge */
+  user-select          : none; /* Non-prefixed version, currently
+                                  supported by Chrome, Opera and Firefox */
+}
+
+input[type=text] {
+  font-size       : 20px;
+  background-color: #222222;
+  padding         : 10px;
+  border-radius   : 5px;
+  color           : #eee;
+}
+
+input:focus-visible {
+  background-color: #2e2e2e;
+  border          : none;
+  outline         : none;
+}
+
+table {
+    border-collapse: collapse;
+    table-layout   : fixed;     /* Para que sea "even" */
+    width          : 100%;
+    min-height     : 100%;
+
+    /* display: flex; */
+    
+}
+td, th {
+    border : 1px solid;
+    margin : 0;
+    padding: 0;
+}
+
+.container_left {
+  padding         : 50px;
+  justify-content : flex-start;
+  display         : flex;
+  flex-direction  : column;
+  height          : 100%;
+  min-height      : 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  width           : calc(50% - 100px);
+  float           : left;
+}
+
+.container_right {
+  padding         : 50px;
+  justify-content : center;
+  align-items     : center;
+  display         : flex;
+  flex-direction  : column;
+  height          : 100%;
+  min-height      : 100%;
+  background-color: transparent;
+  width           : calc(50% - 100px);
+  float           : right;
+}
+
+.element_left {
+  width  : 100%;
+  margin : 0;
+  padding: 0;
+  border : 0;
+}
+
+.row {
+  color  : rgb(116, 116, 116);
+  padding: 5px;
+}
+
+.row:hover {
+  color  : rgb(255, 255, 255);
+  /* background-color: rgb(50, 50, 50); */
+}
+
+.button_a {
+  color  : rgb(116, 116, 116);
+  display: inline;
+  cursor : pointer;
+}
+
+.button_a:hover {
+  color  : rgb(255, 255, 255);
+}
+
+.overlay_container
+{
+  position        : absolute;
+  top             : 0;
+  left            : 0;
+  width           : 100%;
+  height          : 100%;
+  z-index         : 1;
+  background-color: rgba(0, 0, 0, 0.7);
+  display         : none;
+  justify-content : center;
+  align-items     : center;
+}
+
+.pop_up_dialog_box_with_gradient_borders
+{
+  /* width           : 500px;
+  height          : 300px; */
+  padding: 50px;
+  background-color: #111111;
+  border-radius   : 5px;
+  display         : flex;
+  flex-direction  : column;
+  justify-content : center;
+  align-items     : center;
+  padding         : 20px;
+}
+
+.container_options_colors
+{
+  background-color: #222222;
+  padding         : 10px;
+  border-radius   : 5px;
+  width           : 100%;
+}
+
+.spacer_m
+{
+  width : 10px;
+  height: 10px;
+}
+
+.spacer_l
+{
+  width : 25px;
+  height: 25px;
+}
+
+.row_tablecolor
+{
+  margin-top   : 10px;
+  margin-bottom: 10px;
+  padding      : 0;
+}
+
+.row_tablecolor:hover
+{
+  background-color: #2e2e2e;
+}
+
+.row_text
+{
+  display: inline;
+}
+
+.circle_color
+{
+  display         : inline-block;
+  width           : 23px;
+  height          : 23px;
+  float           : right;
+  border-radius   : 50%;
+  background-color: red;
+}
+
+.x_is_to_close
+{
+  margin-left: 10px;
+  display    : inline-block;
+  float      : right;
+}
+
+h1
+{
+  font-size: 30px;
+}
