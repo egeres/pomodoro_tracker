@@ -135,9 +135,11 @@ class App extends React.Component {
         
       this.update_visuals()
 
+      invoke("pomodoro_start");
+
       let interval_timer = setInterval(() => {
 
-        console.log("...");
+        // console.log("...");
 
         if (this.time_sec_current > 0)
         {
@@ -161,6 +163,7 @@ class App extends React.Component {
           }).then(to_create => {
             this.create_rows_left_panel(to_create)
           })
+          invoke("pomodoro_end");
         }
       }, 1000)
 
@@ -238,6 +241,7 @@ class App extends React.Component {
       this.create_rows_left_panel(to_create)
     })
 
+    invoke("pomodoro_end");
   }
 
   start_retrospective_pomodoro_justnow()
@@ -264,6 +268,8 @@ class App extends React.Component {
     }).then(to_create => {
       this.create_rows_left_panel(to_create)
     })
+
+    invoke("pomodoro_end");
   }
 
   set_value_if_input(the_value)
@@ -276,27 +282,77 @@ class App extends React.Component {
 
   create_rows_left_panel(list_of_names)
   {
+
+    // We remove the previously existing elements
     while (document.getElementById("list_of_events").firstChild)
     {
       document.getElementById("list_of_events").removeChild(document.getElementById("list_of_events").firstChild);
     }
 
+    // // We-create them I
+    // for (let x of list_of_names)
+    // {
+    //     var new_row = document.createElement("div");
+    //     new_row.classList.add("row");
+    //     new_row.classList.add("noselect");
+    //     // @ts-ignore
+    //     new_row.onclick   = (self) => { this.set_value_if_input(self.target.innerText); }
+    //     // new_row.onclick   = (self) => { 
+    //     //   // @ts-ignore
+    //     //   this.set_value_if_input(self.target.innerText);
+    //     //   // const i = self.target as HTMLElement;
+    //     //   // this.set_value_if_input(i.innerText);
+    //     // }
+    //     new_row.innerHTML = x;
+    //     document.getElementById("list_of_events").appendChild(new_row);
+    // }
+
+
+
+
+    // Given the variable list_of_names, we split each element by ">" and get the unique values each string starts with
+    let list_of_roots = []
+    for (let x of list_of_names)
+    {
+      let splitted = x.split(">")
+      let to_add   = splitted[0].trim()
+
+      // If is not in list_of_roots, we append it
+      if (list_of_roots.indexOf(to_add) == -1)
+      {
+        list_of_roots.push(to_add)
+      }
+    }
+
+    // We sort them in alphabetical order
+    list_of_roots.sort()
+
+    // Palettes n stuff (More here, https://coolors.co/palettes/popular/gradient)
+    let palette_0 = ["#FF0000","#FF7F00","#FFFF00","#00FF00","#0000FF","#4B0082","#9400D3",]
+    let palette_1 = ["#ADFFC7","#BBDCAD","#C8B993","#D6967A","#E47260","#F14F46","#FF2C2C"];
+    let palette_2 = ["#8ecae6","#219ebc","#023047","#ffb703","#fb8500"];
+    let palette_3 = ["#8ecae6","#219ebc","#f0f3bd","#bee3db"];
+    let palette_4 = ["#004970","#0a9396","#ee9b00","#bb5903","#9b2226"];
+
+    let palette = palette_4;
+  
+    // Colors are assigned to each root
+    let i      = 0;
+    let colors = {};
+    for (let x of list_of_roots) {colors[x] = palette[i % palette.length];i++;}
+
+    // We-create the roots
     for (let x of list_of_names)
     {
         var new_row = document.createElement("div");
-        new_row.classList.add("row");
-        new_row.classList.add("noselect");
-        // @ts-ignore
+        new_row.classList.add("row"     );
+        new_row.classList.add("noselect"); // @ts-ignore
+        new_row.style.color = colors[x.split(">")[0].trim()];
         new_row.onclick   = (self) => { this.set_value_if_input(self.target.innerText); }
-        // new_row.onclick   = (self) => { 
-        //   // @ts-ignore
-        //   this.set_value_if_input(self.target.innerText);
-        //   // const i = self.target as HTMLElement;
-        //   // this.set_value_if_input(i.innerText);
-        // }
         new_row.innerHTML = x;
         document.getElementById("list_of_events").appendChild(new_row);
     }
+
   }
 
   render()
