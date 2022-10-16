@@ -16,6 +16,7 @@ use chrono::TimeZone;
 use std::path::Path;
 use std::cmp::Ordering;
 use std::process::Command;
+use std::error::Error;
 
 fn save_json(filename:&String, data_to_save:&Vec<HashMap<String, String>>)
 {
@@ -299,11 +300,29 @@ fn annotate_pomodoro(pomodoro_name: String, duration_in_min:Option<i32>) -> Vec<
 	// 	.expect("failed to execute process");
 
 	// let output_command = Command::new("C:/Users/Cherrypie/AppData/Local/Programs/Python/Python39/pythonw.exe")
-	let output_command = Command::new("pythonw")
-		.arg("C:/Github/Apuntes/Windows_automated/personal_tracking_export_pomodoros.py")
-		.spawn();
-	if output_command.is_err() { println!("Python script gave an error: {:?}", output_command.err().unwrap()); }
-	else {                       println!("Python script executed"); }
+
+
+
+
+
+	// let script_to_exdecute = "C:/Github/Apuntes/Windows_automated/personal_tracking_export_pomodoros.py";
+	// // We check the script exists
+	// if Path::new(script_to_exdecute).exists()
+	// {
+	// 	let output_command = Command::new("pythonw")
+	// 		.arg(script_to_exdecute)
+	// 		.spawn();
+	// 	if output_command.is_err() { println!("Python script gave an error: {:?}", output_command.err().unwrap()); }
+	// 	else {                       println!("Python script executed"); }
+	// }
+	// else
+	// {
+	// 	println!("File does not exist: {}", script_to_exdecute);
+	// }
+
+
+
+
 
 	// We get the unique names of the segments
 	let mut unique_names : Vec<String> = Vec::new();
@@ -349,6 +368,43 @@ fn get_last_date_of_segment() -> String {
 	last_date
 }
 
+fn execute_script_python(script_to_exdecute : &str) -> Result<(), Box<dyn Error>>
+{
+	// We check the script exists
+	if Path::new(script_to_exdecute).exists()
+	{
+		let output_command = Command::new("pythonw")
+			.arg(script_to_exdecute)
+			.spawn();
+		if output_command.is_err() { println!("Python script gave an error: {:?}", output_command.err().unwrap()); }
+		else {                       println!("Python script executed successfully"); }
+	}
+	else
+	{
+		println!("File does not exist: {}", script_to_exdecute);
+	}
+
+	Ok(())
+}
+
+#[tauri::command]
+fn pomodoro_end()
+{
+	// This needs to be an option configurable by the user
+	let o = execute_script_python("C:/Github/Apuntes/tool_blockdistractions_off.py");
+	if  o.is_err() { println!("Error: {:?}", o.err().unwrap()); }
+	let o = execute_script_python("C:/Github/Apuntes/Windows_automated/personal_tracking_export_pomodoros.py");
+	if  o.is_err() { println!("Error: {:?}", o.err().unwrap()); }
+}
+
+#[tauri::command]
+fn pomodoro_start()
+{
+	// This needs to be an option configurable by the user
+	let o = execute_script_python("C:/Github/Apuntes/tool_blockdistractions_on.py");
+	if  o.is_err() { println!("Error: {:?}", o.err().unwrap()); }
+}
+
 // static PATH_ROOT_FOLDER : &str = "C:/data_pomodoros";
 const PATH_ROOT_FOLDER : &str = "C:/Registries/Pomodoro";
 
@@ -386,6 +442,8 @@ fn main() {
 			annotate_pomodoro,
 			conf_get_time_pomodoro_in_min,
 			get_last_date_of_segment,
+			pomodoro_start,
+			pomodoro_end,
 		])
 		.run(tauri::generate_context!())
 		.expect("error while running tauri application");
