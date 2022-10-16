@@ -291,7 +291,15 @@ fn annotate_pomodoro(pomodoro_name: String, duration_in_min:Option<i32>) -> Vec<
 
 	// Execute python script
 	// let output_command = Command::new("pythonw")
-	let output_command = Command::new("C:/Users/Cherrypie/AppData/Local/Programs/Python/Python39/pythonw.exe")
+
+	// let username = whoami::username();
+	// let output_command = Command::new("pythonw")
+	// 	.arg(format!("/Users/{}/.pomodoro/pomodoro.py", username))
+	// 	.output()
+	// 	.expect("failed to execute process");
+
+	// let output_command = Command::new("C:/Users/Cherrypie/AppData/Local/Programs/Python/Python39/pythonw.exe")
+	let output_command = Command::new("pythonw")
 		.arg("C:/Github/Apuntes/Windows_automated/personal_tracking_export_pomodoros.py")
 		.spawn();
 	if output_command.is_err() { println!("Python script gave an error: {:?}", output_command.err().unwrap()); }

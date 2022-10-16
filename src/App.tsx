@@ -212,7 +212,7 @@ class App extends React.Component {
     if (last_date !== "")
     {
       // @ts-ignore
-      minutes_ago = Math.floor((new Date() - new Date(last_date)) / 1000 / 60) - 2;
+      minutes_ago = Math.floor((new Date() - new Date(last_date)) / 1000 / 60) - 0.5;
     }
 
     this.close_pop_up()
