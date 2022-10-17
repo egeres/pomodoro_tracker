@@ -215,7 +215,7 @@ class App extends React.Component {
     if (last_date !== "")
     {
       // @ts-ignore
-      minutes_ago = Math.floor((new Date() - new Date(last_date)) / 1000 / 60) - 0.5;
+      minutes_ago = Math.floor(((new Date() - new Date(last_date)) / 1000 / 60) - 0.5);
     }
 
     this.close_pop_up()
@@ -346,8 +346,8 @@ class App extends React.Component {
     {
         var new_row = document.createElement("div");
         new_row.classList.add("row"     );
-        new_row.classList.add("noselect"); // @ts-ignore
-        new_row.style.color = colors[x.split(">")[0].trim()];
+        new_row.classList.add("noselect");
+        new_row.style.color = colors[x.split(">")[0].trim()]; // @ts-ignore
         new_row.onclick   = (self) => { this.set_value_if_input(self.target.innerText); }
         new_row.innerHTML = x;
         document.getElementById("list_of_events").appendChild(new_row);
