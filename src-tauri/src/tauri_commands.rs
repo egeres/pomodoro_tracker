@@ -1,32 +1,19 @@
 
 
+
 use std::fs::*;
 use std::collections::HashMap;
-// use std::io::Read;
-// use std::io::Write;
-// use chrono::{DateTime, Local}; // TimeZone, NaiveDateTime
-// use chrono::TimeZone;
 use std::path::Path;
-// use std::cmp::Ordering;
-// use std::process::Command;
-// use std::error::Error;
-// use std::sync::Mutex;
-// use std::thread;
-// use std::time::Duration;
-
-// mod segment;
-// use main::Segment;
 use chrono::{Local}; // TimeZone, NaiveDateTime
 
-
-
-// Import execute_script_python from main.rs
 use crate::utils::execute_script_python;
 use crate::utils::list_of_segments;
 use crate::utils::save_json;
 use crate::Segment;
 use crate::PATH_ROOT_FOLDER;
 use crate::START_TIME;
+use crate::TIMER_TOTAL_S;
+use crate::RUNNING;
 
 
 
@@ -34,7 +21,9 @@ use crate::START_TIME;
 pub fn command_retrieve_last_pomodoros() -> Vec<String> {
 
 	// List of segments
-	let mut _out = list_of_segments(&PATH_ROOT_FOLDER.to_string());
+	let a : String = PATH_ROOT_FOLDER.lock().unwrap().to_string();
+
+	let mut _out = list_of_segments(&a.to_string());
 	_out.sort();
 
 	// We get the unique names of the segments
@@ -52,6 +41,8 @@ pub fn command_retrieve_last_pomodoros() -> Vec<String> {
 pub fn annotate_pomodoro(pomodoro_name: String, duration_in_min:Option<i32>) -> Vec<String> {
 	
 	println!("dutati {}", duration_in_min.unwrap_or(999));
+
+	let a : String = PATH_ROOT_FOLDER.lock().unwrap().to_string();
 
 	let the_time : i32 = duration_in_min.unwrap_or(25);
 
@@ -71,11 +62,11 @@ pub fn annotate_pomodoro(pomodoro_name: String, duration_in_min:Option<i32>) -> 
 	}
 
 	// We load the current information from scratch
-	if !Path::new(&PATH_ROOT_FOLDER).exists() {
-		create_dir_all(&PATH_ROOT_FOLDER).unwrap();
+	if !Path::new(&a).exists() {
+		create_dir_all(&a).unwrap();
 	}
 
-	let mut all_segments = list_of_segments(&PATH_ROOT_FOLDER.to_string());
+	let mut all_segments = list_of_segments(&a.to_string());
 	all_segments.push(this_segment);
 	all_segments.sort();
 
@@ -88,7 +79,7 @@ pub fn annotate_pomodoro(pomodoro_name: String, duration_in_min:Option<i32>) -> 
 	{
 		if all_segments.len() == 1
 		{
-			let filename         : String                       = format!("{}/{}.json", PATH_ROOT_FOLDER, current_stack_of_segments[0].start.format("%Y-%m-%d"));
+			let filename         : String                       = format!("{}/{}.json", a, current_stack_of_segments[0].start.format("%Y-%m-%d"));
 			let mut data_to_save : Vec<HashMap<String, String>> = Vec::new();
 			let s = segment;
 			// for s in current_stack_of_segments.iter()
@@ -121,7 +112,7 @@ pub fn annotate_pomodoro(pomodoro_name: String, duration_in_min:Option<i32>) -> 
 		}
 		else
 		{
-			let filename         : String                       = format!("{}/{}.json", PATH_ROOT_FOLDER, current_stack_of_segments[0].start.format("%Y-%m-%d"));
+			let filename         : String                       = format!("{}/{}.json", a, current_stack_of_segments[0].start.format("%Y-%m-%d"));
 			let mut data_to_save : Vec<HashMap<String, String>> = Vec::new();
 			
 			for s in current_stack_of_segments.iter()
@@ -143,7 +134,7 @@ pub fn annotate_pomodoro(pomodoro_name: String, duration_in_min:Option<i32>) -> 
 
 	if current_stack_of_segments.len() > 0
 	{
-		let filename         : String                       = format!("{}/{}.json", PATH_ROOT_FOLDER, current_stack_of_segments[0].start.format("%Y-%m-%d"));
+		let filename         : String                       = format!("{}/{}.json", a, current_stack_of_segments[0].start.format("%Y-%m-%d"));
 		let mut data_to_save : Vec<HashMap<String, String>> = Vec::new();
 		for s in current_stack_of_segments.iter()
 		{
@@ -158,7 +149,7 @@ pub fn annotate_pomodoro(pomodoro_name: String, duration_in_min:Option<i32>) -> 
 
 
 	// // List of segments
-	// let mut _out = list_of_segments(&PATH_ROOT_FOLDER.to_string());
+	// let mut _out = list_of_segments(&a.to_string());
 	// _out.sort();
 
 	// Execute python script
@@ -208,24 +199,17 @@ pub fn annotate_pomodoro(pomodoro_name: String, duration_in_min:Option<i32>) -> 
 
 #[tauri::command]
 pub fn conf_get_time_pomodoro_in_min() -> f32 {
-
-	#[cfg(debug_assertions)]
-	{
-		1.2
-	}
-
-	#[cfg(not(debug_assertions))]
-	{
-		25.0
-	}
+	let total_time_in_m = (*TIMER_TOTAL_S.lock().unwrap()) as f32 / 60.0;
+	total_time_in_m
 }
 
 #[tauri::command]
 pub fn get_last_date_of_segment() -> String {
 
 	let mut last_date : String = "".to_string();
+	let a : String = PATH_ROOT_FOLDER.lock().unwrap().to_string();
 
-	let mut list_of_files : Vec<Segment> = list_of_segments(&PATH_ROOT_FOLDER.to_string());
+	let mut list_of_files : Vec<Segment> = list_of_segments(&a.to_string());
 	list_of_files.sort();
 
 	if list_of_files.len() > 0
@@ -240,6 +224,19 @@ pub fn get_last_date_of_segment() -> String {
 }
 
 #[tauri::command]
+pub fn pomodoro_start() {
+
+	*START_TIME.lock().unwrap() = Local::now() + chrono::Duration::seconds(*TIMER_TOTAL_S.lock().unwrap() as i64);
+
+	// This needs to be an option configurable by the user
+	let o = execute_script_python("C:/Github/Apuntes/tool_blockdistractions_on.py");
+	if  o.is_err() { println!("Error: {:?}", o.err().unwrap()); }
+
+	*RUNNING.lock().unwrap() = true;
+
+}
+
+#[tauri::command]
 pub fn pomodoro_end() {
 
 	// This needs to be an option configurable by the user
@@ -247,47 +244,12 @@ pub fn pomodoro_end() {
 	if  o.is_err() { println!("Error: {:?}", o.err().unwrap()); }
 	let o = execute_script_python("C:/Github/Apuntes/Windows_automated/personal_tracking_export_pomodoros.py");
 	if  o.is_err() { println!("Error: {:?}", o.err().unwrap()); }
+
+	*RUNNING.lock().unwrap() = false;
+
 }
 
 #[tauri::command]
-pub fn pomodoro_start() {
-
-	// timer_total_s = 2 * 60;
-	// let mut tnow = timer_total_s.lock().unwrap();
-
-	// let a = (conf_get_time_pomodoro_in_min() * 60.0);
-	// println!("a: {}", a);
-	// *tnow = a as i32;
-
-	
-
-	// // Start a thread that removed 1 second every second
-	// let my_thread = thread::spawn(move || {
-	// 	loop {
-	// 		// We wait 1 second
-	// 		thread::sleep(Duration::from_secs(1));
-	// 		// We remove 1 second
-	// 		let mut timer_total_s_mut = timer_total_s.lock().unwrap();
-	// 		*timer_total_s_mut -= 1;
-	// 		if *timer_total_s_mut <= 0
-	// 		{
-	// 			*timer_total_s_mut = 0;
-	// 			break;
-	// 		}
-	// 	}
-	// });
-
-
-
-	// *(start_time.lock().unwrap()) = Mutex::new(Local::now());
-	
-	let mut tnow = START_TIME.lock().unwrap();
-
-	// Local tuime plus 25 minutes
-	// *tnow = Local::now() + Duration::minutes(conf_get_time_pomodoro_in_min() as i64);
-	*tnow = Local::now() + chrono::Duration::minutes(1);
-
-	// This needs to be an option configurable by the user
-	let o = execute_script_python("C:/Github/Apuntes/tool_blockdistractions_on.py");
-	if  o.is_err() { println!("Error: {:?}", o.err().unwrap()); }
+pub fn pomodoro_cancel() {
+	*RUNNING.lock().unwrap() = false;
 }

@@ -6,10 +6,15 @@ use std::io::Write;
 use std::process::Command;
 use std::error::Error;
 use std::path::Path;
+use std::thread;
+use std::time::Duration;
 use chrono::{Local}; // TimeZone, NaiveDateTime
 use chrono::TimeZone; // For using datetime_from_str
 
 use crate::segment::Segment;
+use crate::TIMER_TOTAL_S;
+use crate::START_TIME;
+use crate::RUNNING;
 
 pub fn save_json(filename:&String, data_to_save:&Vec<HashMap<String, String>>) {
 
@@ -116,8 +121,7 @@ pub fn list_of_segments(path_dir:&String) -> Vec<Segment> {
 	return to_return;
 }
 
-pub fn execute_script_python(script_to_execute : &str) -> Result<(), Box<dyn Error>>
-{
+pub fn execute_script_python(script_to_execute : &str) -> Result<(), Box<dyn Error>> {
 	println!("{}", script_to_execute);
 
 	// We check the script exists
@@ -135,4 +139,50 @@ pub fn execute_script_python(script_to_execute : &str) -> Result<(), Box<dyn Err
 	}
 
 	Ok(())
+}
+
+pub fn filewritter(file_name : &str) {
+
+    let mut file_name_l = file_name.to_string();
+
+    if !file_name_l.ends_with(".txt") {
+        file_name_l = file_name_l + ".txt";
+    }
+
+    if !Path::new(file_name).exists() {
+        File::create(file_name).unwrap();
+    }
+
+    // While true clear the file and write write "0.89" in the file each 5 seconds
+    loop {
+
+        thread::sleep(Duration::from_millis(1000));
+
+        {
+            let mut file = OpenOptions::new()
+                .write(true)
+                .truncate(true)
+                .open(&file_name_l)
+                .unwrap();
+            
+            if *RUNNING.lock().unwrap()
+            {
+                let time_start: chrono::DateTime<Local> = *START_TIME.lock().unwrap();
+                let time_since_start_time_in_seconds: i64 = (time_start - Local::now()).num_seconds();
+                
+                let a = time_since_start_time_in_seconds as f64 / *TIMER_TOTAL_S.lock().unwrap() as f64;
+
+                let v = f64::max(0.0 as f64, a);
+
+                file.write_all(
+                    v.to_string().as_bytes()
+                ).unwrap();
+            }
+            else
+            {
+                file.write_all(b"1.00").unwrap();
+            }
+        }
+    }
+
 }

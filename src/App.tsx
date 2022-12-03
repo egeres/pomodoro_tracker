@@ -77,6 +77,13 @@ class App extends React.Component {
 
   query_retrospective_pomodoro()
   {
+    // @ts-ignore
+    let pomodoro_name = (document.getElementById("input_pomodoro_name")).value.trim()
+    if (pomodoro_name == "")
+    {
+      return ""
+    }
+
     this.play_audio_click()
     document.getElementById("overlay_retrospective_pomodoro").style.display = "flex"
   }
@@ -206,6 +213,7 @@ class App extends React.Component {
     // arcProgress.updateProgress({progress:1.0})
     this.setState({progress:1.0})
 
+    invoke("pomodoro_cancel");
   }
 
   async start_retrospective_pomodoro_fill_untilnow()
