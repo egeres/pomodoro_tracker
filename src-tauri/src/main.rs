@@ -17,6 +17,15 @@ use std::path::Path;
 use std::cmp::Ordering;
 use std::process::Command;
 use std::error::Error;
+use std::sync::Mutex;
+// use std::thread;
+use std::time::Duration;
+use lazy_static::lazy_static; // 1.4.0
+
+use std::convert::Infallible;
+use std::net::SocketAddr;
+use hyper::{Body, Request, Response, Server};
+use hyper::service::{make_service_fn, service_fn};
 
 fn save_json(filename:&String, data_to_save:&Vec<HashMap<String, String>>)
 {
@@ -368,20 +377,22 @@ fn get_last_date_of_segment() -> String {
 	last_date
 }
 
-fn execute_script_python(script_to_exdecute : &str) -> Result<(), Box<dyn Error>>
+fn execute_script_python(script_to_execute : &str) -> Result<(), Box<dyn Error>>
 {
+	println!("{}", script_to_execute);
+
 	// We check the script exists
-	if Path::new(script_to_exdecute).exists()
+	if Path::new(script_to_execute).exists()
 	{
 		let output_command = Command::new("pythonw")
-			.arg(script_to_exdecute)
+			.arg(script_to_execute)
 			.spawn();
 		if output_command.is_err() { println!("Python script gave an error: {:?}", output_command.err().unwrap()); }
 		else {                       println!("Python script executed successfully"); }
 	}
 	else
 	{
-		println!("File does not exist: {}", script_to_exdecute);
+		println!("File does not exist: {}", script_to_execute);
 	}
 
 	Ok(())
@@ -400,13 +411,101 @@ fn pomodoro_end()
 #[tauri::command]
 fn pomodoro_start()
 {
+
+	// timer_total_s = 2 * 60;
+	// let mut tnow = timer_total_s.lock().unwrap();
+
+	// let a = (conf_get_time_pomodoro_in_min() * 60.0);
+	// println!("a: {}", a);
+	// *tnow = a as i32;
+
+	
+
+	// // Start a thread that removed 1 second every second
+	// let my_thread = thread::spawn(move || {
+	// 	loop {
+	// 		// We wait 1 second
+	// 		thread::sleep(Duration::from_secs(1));
+	// 		// We remove 1 second
+	// 		let mut timer_total_s_mut = timer_total_s.lock().unwrap();
+	// 		*timer_total_s_mut -= 1;
+	// 		if *timer_total_s_mut <= 0
+	// 		{
+	// 			*timer_total_s_mut = 0;
+	// 			break;
+	// 		}
+	// 	}
+	// });
+
+
+
+	// *(start_time.lock().unwrap()) = Mutex::new(Local::now());
+	
+	let mut tnow = start_time.lock().unwrap();
+
+	// Local tuime plus 25 minutes
+	// *tnow = Local::now() + Duration::minutes(conf_get_time_pomodoro_in_min() as i64);
+	*tnow = Local::now() + chrono::Duration::minutes(1);
+
 	// This needs to be an option configurable by the user
 	let o = execute_script_python("C:/Github/Apuntes/tool_blockdistractions_on.py");
 	if  o.is_err() { println!("Error: {:?}", o.err().unwrap()); }
 }
 
+async fn hello_world(_req: Request<Body>) -> Result<Response<Body>, Infallible> {
+
+	// Get the current value of timer_total_s
+	let current_timer_total_s = timer_total_s.lock().unwrap().clone().to_string();
+
+	let time_now = Local::now();
+	let time_start = start_time.lock().unwrap().clone();
+
+	println!("time_now  : {:?}", time_now);
+	println!("time_start: {:?}", time_start);
+
+	// let time_since_start_time_in_seconds : String = (time_now - time_start).num_seconds().to_string();
+	let time_since_start_time_in_seconds : String = std::cmp::max(0, (time_start - time_now).num_seconds()).to_string();
+    // Ok(Response::new(time_since_start_time_in_seconds.into()))
+    Ok(Response::new("0.87".into()))
+}
+
+#[tokio::main]
+async fn start_tokio() {
+
+	println!("Starting tokio...");
+
+    // We'll bind to 127.0.0.1:3080
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3080));
+
+    // A `Service` is needed for every connection, so this
+    // creates one from our `hello_world` function.
+    let make_svc = make_service_fn(|_conn| async {
+        // service_fn converts our function into a `Service`
+        Ok::<_, Infallible>(service_fn(hello_world))
+    });
+
+    let server = Server::bind(&addr).serve(make_svc);
+
+    // Run this server for... forever!
+    if let Err(e) = server.await {
+        eprintln!("server error: {}", e);
+    }
+}
+
 // static PATH_ROOT_FOLDER : &str = "C:/data_pomodoros";
-const PATH_ROOT_FOLDER : &str = "C:/Registries/Pomodoro";
+const  PATH_ROOT_FOLDER : &str       = "C:/Registries/Pomodoro";
+// static mut timer_total_s : i32 = 2 * 60;
+// static timer_total_s      : Mutex<i32>;
+// static timer_total_s      : Mutex<i32> = Mutex::new(2 * 60);
+// const timer_total_s      : Mutex<i32> = Mutex::new(2 * 60);
+
+lazy_static! {
+	// static timer_total_s : Mutex<i32> = Mutex::new(2 * 60);
+	static ref timer_total_s : Mutex<i32> = Mutex::new(2 * 60);
+
+	// datetime
+	static ref start_time    : Mutex<DateTime<Local>> = Mutex::new(Local::now());
+}
 
 fn main() {
 
@@ -417,6 +516,10 @@ fn main() {
 		#[cfg(debug_assertions)] { println!("Created missing path..."); }
 		create_dir_all(&PATH_ROOT_FOLDER).unwrap();
 	}
+
+	// timer_total_s = Mutex::new(2 * 60);
+
+	std::thread::spawn(start_tokio);
 
 
 	// // List of segments
