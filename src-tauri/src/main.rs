@@ -27,6 +27,11 @@ use std::net::SocketAddr;
 use hyper::{Body, Request, Response, Server};
 use hyper::service::{make_service_fn, service_fn};
 
+
+mod segment;
+use segment::Segment;
+
+
 fn save_json(filename:&String, data_to_save:&Vec<HashMap<String, String>>)
 {
 	#[cfg(debug_assertions)] { println!("Saving {}...", filename); }
@@ -101,38 +106,7 @@ fn list_files_in_folder(folder_name: &str) -> Result<Vec<String>, String> {
 
 
 
-#[derive(Debug, Clone)]
-struct Segment {
-  name : String,
-  start: DateTime<Local>,
-  end  : DateTime<Local>,
-}
 
-impl Ord for Segment { // https://doc.rust-lang.org/std/cmp/trait.Ord.html
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.start.cmp(&other.start)
-    }
-}
-
-impl PartialOrd for Segment {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl PartialEq for Segment {
-    fn eq(&self, other: &Self) -> bool {
-        (self.start == other.start) && (self.name == other.name) && (self.end == other.end)
-    }
-}
-
-impl Eq for Segment {}
-
-// impl Eq for Segment { 
-// 	fn eq(&self, other: &Self) -> bool {
-//         (self.start == other.start) && (self.name == other.name) && (self.end == other.end)
-// 	}
-// }
 
 // Create a list of segments with the info of the jsons in the data folder
 fn list_of_segments(path_dir:&String) -> Vec<Segment> {
