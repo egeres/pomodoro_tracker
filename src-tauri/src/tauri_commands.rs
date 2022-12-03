@@ -26,7 +26,8 @@ use crate::list_of_segments;
 use crate::save_json;
 use crate::Segment;
 use crate::PATH_ROOT_FOLDER;
-use crate::start_time;
+use crate::START_TIME;
+
 
 
 #[tauri::command]
@@ -280,7 +281,7 @@ pub fn pomodoro_start() {
 
 	// *(start_time.lock().unwrap()) = Mutex::new(Local::now());
 	
-	let mut tnow = start_time.lock().unwrap();
+	let mut tnow = START_TIME.lock().unwrap();
 
 	// Local tuime plus 25 minutes
 	// *tnow = Local::now() + Duration::minutes(conf_get_time_pomodoro_in_min() as i64);

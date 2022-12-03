@@ -22,10 +22,6 @@ use std::sync::Mutex;
 // use std::time::Duration;
 use lazy_static::lazy_static; // 1.4.0
 
-use std::convert::Infallible;
-use std::net::SocketAddr;
-use hyper::{Body, Request, Response, Server};
-use hyper::service::{make_service_fn, service_fn};
 
 
 mod segment;
@@ -34,6 +30,8 @@ use segment::Segment;
 mod tauri_commands;
 use tauri_commands::*;
 
+mod server_http;
+use server_http::start_httpserver;
 
 fn save_json(filename:&String, data_to_save:&Vec<HashMap<String, String>>)
 {
@@ -169,45 +167,6 @@ pub fn execute_script_python(script_to_execute : &str) -> Result<(), Box<dyn Err
 
 
 
-async fn hello_world(_req: Request<Body>) -> Result<Response<Body>, Infallible> {
-
-	// Get the current value of timer_total_s
-	let current_timer_total_s = timer_total_s.lock().unwrap().clone().to_string();
-
-	let time_now = Local::now();
-	let time_start = start_time.lock().unwrap().clone();
-
-	println!("time_now  : {:?}", time_now);
-	println!("time_start: {:?}", time_start);
-
-	// let time_since_start_time_in_seconds : String = (time_now - time_start).num_seconds().to_string();
-	let time_since_start_time_in_seconds : String = std::cmp::max(0, (time_start - time_now).num_seconds()).to_string();
-    // Ok(Response::new(time_since_start_time_in_seconds.into()))
-    Ok(Response::new("0.87".into()))
-}
-
-#[tokio::main]
-async fn start_tokio() {
-
-	println!("Starting tokio...");
-
-    // We'll bind to 127.0.0.1:3080
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3080));
-
-    // A `Service` is needed for every connection, so this
-    // creates one from our `hello_world` function.
-    let make_svc = make_service_fn(|_conn| async {
-        // service_fn converts our function into a `Service`
-        Ok::<_, Infallible>(service_fn(hello_world))
-    });
-
-    let server = Server::bind(&addr).serve(make_svc);
-
-    // Run this server for... forever!
-    if let Err(e) = server.await {
-        eprintln!("server error: {}", e);
-    }
-}
 
 // static PATH_ROOT_FOLDER : &str = "C:/data_pomodoros";
 const  PATH_ROOT_FOLDER : &str       = "C:/Registries/Pomodoro";
@@ -218,10 +177,10 @@ const  PATH_ROOT_FOLDER : &str       = "C:/Registries/Pomodoro";
 
 lazy_static! {
 	// static timer_total_s : Mutex<i32> = Mutex::new(2 * 60);
-	static ref timer_total_s : Mutex<i32> = Mutex::new(2 * 60);
+	static ref TIMER_TOTAL_S : Mutex<i32> = Mutex::new(2 * 60);
 
 	// datetime
-	static ref start_time    : Mutex<DateTime<Local>> = Mutex::new(Local::now());
+	static ref START_TIME    : Mutex<DateTime<Local>> = Mutex::new(Local::now());
 }
 
 fn main() {
@@ -236,7 +195,7 @@ fn main() {
 
 	// timer_total_s = Mutex::new(2 * 60);
 
-	std::thread::spawn(start_tokio);
+	std::thread::spawn(start_httpserver);
 
 
 	// // List of segments
