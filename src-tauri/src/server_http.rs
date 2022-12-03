@@ -32,9 +32,8 @@ pub async fn start_httpserver() {
 	println!("Starting HTTP server...");
 
     // We'll bind to 127.0.0.1:3080
-
-    let port : i32        = std::env::var("PORT").unwrap_or("3080".to_string()).parse().unwrap();
-    let addr : SocketAddr = SocketAddr::from(([127, 0, 0, 1], 3080));
+    let port : u16        = std::env::var("PORT").unwrap_or("3080".to_string()).parse().unwrap();
+    let addr : SocketAddr = SocketAddr::from(([127, 0, 0, 1], port));
 
     // A `Service` is needed for every connection, so this
     // creates one from our `hello_world` function.

@@ -21,9 +21,9 @@ use chrono::{Local}; // TimeZone, NaiveDateTime
 
 
 // Import execute_script_python from main.rs
-use crate::execute_script_python;
-use crate::list_of_segments;
-use crate::save_json;
+use crate::utils::execute_script_python;
+use crate::utils::list_of_segments;
+use crate::utils::save_json;
 use crate::Segment;
 use crate::PATH_ROOT_FOLDER;
 use crate::START_TIME;
