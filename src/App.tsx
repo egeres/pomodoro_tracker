@@ -489,7 +489,7 @@ class App extends React.Component {
 
       </div>
 
-      <audio id="audio_click"        src="./sound_click.wav"        preload="auto"></audio>
+      <audio id="audio_click"        src="./sound_click_1.wav"      preload="auto"></audio>
       <audio id="audio_notification" src="./sound_notification.mp3" preload="auto"></audio>
 
     </div>
