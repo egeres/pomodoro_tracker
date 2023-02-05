@@ -109,10 +109,19 @@ pub fn list_of_segments(path_dir:&String) -> Vec<Segment> {
 
 	for i in data_of_files_merged.iter()
 	{
+		
+		// to-do : refactor
+		let a = i.get("type_of_event");
+		let b: Option<String>  = match a {
+			Some(x) => Some(x.to_string()),
+			None    => None,
+		};
+
 		to_return.push(Segment {
-			name : i.get("name").unwrap_or(&"unknown".to_string()).to_string(),
-			start: Local.datetime_from_str(&i.get("start").unwrap(), "%Y-%m-%d %H:%M:%S").unwrap(),
-			end  : Local.datetime_from_str(&i.get("end"  ).unwrap(), "%Y-%m-%d %H:%M:%S").unwrap(),
+			name         : i.get("name").unwrap_or(&"unknown".to_string()).to_string(),
+			start        : Local.datetime_from_str(&i.get("start").unwrap(), "%Y-%m-%d %H:%M:%S").unwrap(),
+			end          : Local.datetime_from_str(&i.get("end"  ).unwrap(), "%Y-%m-%d %H:%M:%S").unwrap(),
+			type_of_event: b,
 		});
 	}
 

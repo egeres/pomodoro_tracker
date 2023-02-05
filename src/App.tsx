@@ -169,6 +169,7 @@ class App extends React.Component {
           invoke("annotate_pomodoro", {
             pomodoroName : pomodoro_name,
             durationInMin: Math.floor(this.time_sec_pomodoro / 60.0),
+            typeOfEvent  : "timer_ended"
           }).then(to_create => {
             this.create_rows_left_panel(to_create)
           })
@@ -246,7 +247,8 @@ class App extends React.Component {
 
     invoke("annotate_pomodoro", {
       pomodoroName : pomodoro_name,
-      durationInMin: minutes_ago  ,
+      durationInMin: minutes_ago,
+      typeOfEvent  : "fill_until_now"
     }).then(to_create => {
       this.create_rows_left_panel(to_create)
     })
@@ -275,6 +277,7 @@ class App extends React.Component {
     invoke("annotate_pomodoro", {
       pomodoroName : pomodoro_name,
       durationInMin: Math.floor(this.time_sec_pomodoro / 60),
+      typeOfEvent  : "just_now",
     }).then(to_create => {
       this.create_rows_left_panel(to_create)
     })
@@ -434,7 +437,7 @@ class App extends React.Component {
 
       <div className="container_left">
         <input id="input_pomodoro_name" className="element_left" type="text" spellCheck="false"/>
-        <div style={{"height":"20px"}}></div>
+        <div style={{"minHeight":"30px"}}></div>
         <div id="list_of_events">
           {/* Events and stuff go here */}
         </div>

@@ -38,7 +38,11 @@ pub fn command_retrieve_last_pomodoros() -> Vec<String> {
 }
 
 #[tauri::command]
-pub fn annotate_pomodoro(pomodoro_name: String, duration_in_min:Option<i32>) -> Vec<String> {
+pub fn annotate_pomodoro(
+	pomodoro_name  : String,
+	duration_in_min: Option<i32>,
+	type_of_event  : Option<String>
+) -> Vec<String> {
 	
 	println!("dutati {}", duration_in_min.unwrap_or(999));
 
@@ -48,17 +52,27 @@ pub fn annotate_pomodoro(pomodoro_name: String, duration_in_min:Option<i32>) -> 
 
 	let this_segment = Segment
 	{
-		start: Local::now() - chrono::Duration::minutes(the_time as i64),
-		end  : Local::now(),
-		name : pomodoro_name,
+		start        : Local:: now() - chrono:: Duration:: minutes(the_time as i64),
+		end          : Local:: now(),
+		name         : pomodoro_name,
+		type_of_event: type_of_event,
 	};
 
 	#[cfg(debug_assertions)]
 	{
+
+		// let a = this_segment.type_of_event;
+
+		// type_of_event is a Option<std::string::String>
+		println!("type_of_event = {}", this_segment.type_of_event.is_some());
+		let a : String = "None 🤡".to_string();
+		let b : &String = this_segment.type_of_event.as_ref().unwrap_or(&a);
+
 		println!("Annotating pomodoro...");
-		println!("\t Name : {}", this_segment.name );
-		println!("\t Start: {}", this_segment.start);
-		println!("\t End  : {}", this_segment.end  );
+		println!("\t Name         : {}", this_segment.name );
+		println!("\t Start        : {}", this_segment.start);
+		println!("\t End          : {}", this_segment.end  );
+		println!("\t type_of_event: {}", b);
 	}
 
 	// We load the current information from scratch
@@ -88,6 +102,9 @@ pub fn annotate_pomodoro(pomodoro_name: String, duration_in_min:Option<i32>) -> 
 			item_map.insert("name" .to_string(), s.name.to_string());
 			item_map.insert("start".to_string(), s.start.format("%Y-%m-%d %H:%M:%S").to_string());
 			item_map.insert("end"  .to_string(), s.end  .format("%Y-%m-%d %H:%M:%S").to_string());
+			if s.type_of_event.is_some() {
+				item_map.insert("type_of_event".to_string(), s.type_of_event.clone().unwrap());
+			}
 			data_to_save.push(item_map);
 			// }
 			save_json(&filename, &data_to_save);
@@ -121,6 +138,9 @@ pub fn annotate_pomodoro(pomodoro_name: String, duration_in_min:Option<i32>) -> 
 				item_map.insert("name" .to_string(), s.name.to_string());
 				item_map.insert("start".to_string(), s.start.format("%Y-%m-%d %H:%M:%S").to_string());
 				item_map.insert("end"  .to_string(), s.end  .format("%Y-%m-%d %H:%M:%S").to_string());
+				if s.type_of_event.is_some() {
+					item_map.insert("type_of_event".to_string(), s.type_of_event.clone().unwrap());
+				}
 				data_to_save.push(item_map);
 			}
 
@@ -142,6 +162,9 @@ pub fn annotate_pomodoro(pomodoro_name: String, duration_in_min:Option<i32>) -> 
 			item_map.insert("name" .to_string(), s.name.to_string());
 			item_map.insert("start".to_string(), s.start.format("%Y-%m-%d %H:%M:%S").to_string());
 			item_map.insert("end"  .to_string(), s.end  .format("%Y-%m-%d %H:%M:%S").to_string());
+			if s.type_of_event.is_some() {
+				item_map.insert("type_of_event".to_string(), s.type_of_event.clone().unwrap());
+			}
 			data_to_save.push(item_map);
 		}
 		save_json(&filename, &data_to_save);

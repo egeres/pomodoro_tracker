@@ -40,6 +40,18 @@ input[type=text] {
   color           : #eee;
 }
 
+
+
+::-moz-selection { /* Code for Firefox */
+  color: white;
+  background: rgb(166, 166, 166);
+}
+::selection {
+  color: white;
+  background: rgb(149, 149, 149);
+}
+
+
 input:focus-visible {
   background-color: #2e2e2e;
   border          : none;
