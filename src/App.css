@@ -62,16 +62,46 @@ td, th {
 }
 
 .container_left {
-  padding         : 50px;
+  padding         : 30px;
   justify-content : flex-start;
   display         : flex;
   flex-direction  : column;
-  height          : 100%;
-  min-height      : 100%;
+  /* height          : 100%; */
+  /* min-height      : 100%; */
   background-color: rgba(0, 0, 0, 0.7);
-  width           : calc(50% - 100px);
+  width           : calc(50%  - 60px);
+  height          : calc(100% - 60px);
   float           : left;
+
+  direction: rtl;
 }
+
+#list_of_events {
+  overflow-y: scroll;
+  /* overflow-y: ; */
+}
+
+#input_pomodoro_name {
+  width: calc(100% - 20px);
+  direction: ltr;
+
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-thumb { /* Handle */
+  background: #888;
+}
+::-webkit-scrollbar-thumb:hover { /* Handle on hover */
+  background: #999;
+}
+
+
+
+
+
+
 
 .container_right {
   padding         : 50px;
@@ -96,6 +126,8 @@ td, th {
 .row {
   color  : rgb(116, 116, 116);
   padding: 5px;
+  padding-left: 30px;
+  direction: ltr;
 }
 
 .row:hover {

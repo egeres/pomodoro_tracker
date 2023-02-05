@@ -124,7 +124,6 @@ class App extends React.Component {
   {
     console.log("start_pomodoro()");
 
-    this.play_audio_click();
 
     // {
 
@@ -138,6 +137,8 @@ class App extends React.Component {
         // WIP show popup
       }
       
+      this.play_audio_click();
+
       this.current_mode = "running"
         
       this.update_visuals()
@@ -192,7 +193,7 @@ class App extends React.Component {
 
   cancel_pomodoro()
   {
-    this.play_audio_click()
+    // this.play_audio_click()
 
     this.close_pop_up()
 
@@ -431,7 +432,7 @@ class App extends React.Component {
         <input id="input_pomodoro_name" className="element_left" type="text" spellCheck="false"/>
         <div style={{"height":"20px"}}></div>
         <div id="list_of_events">
-          asd ad
+          {/* Events and stuff go here */}
         </div>
       </div>
 
