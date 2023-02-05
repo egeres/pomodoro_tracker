@@ -22,7 +22,8 @@ class App extends React.Component {
   {
     super(props);
     this.state = {
-      progress: 1.0
+      progress: 1.0,
+      rows    : []
     };
   }
 
@@ -362,6 +363,9 @@ class App extends React.Component {
         document.getElementById("list_of_events").appendChild(new_row);
     }
 
+    // We save the rows in a state
+    this.setState({ rows: document.querySelectorAll(".row") });
+
   }
 
   render()
@@ -509,6 +513,48 @@ class App extends React.Component {
       setTimeout(() => {this.update_visuals();}, 100); // Just in case...
     })
 
+
+    // Input filters rows
+    const searchInput = document.getElementById("input_pomodoro_name");
+
+    let thiz = this; // Just don't look at this please, open a PR if it burns your eyes too hard 🤦🏻‍♂️
+    this.keyupHandler = function(event) {
+      
+      // We avoid this cases
+      if (event.ctrlKey && (event.key === "a" || event.key === "A")) {
+        return;
+      }
+      if (event.key === "Shift" || event.key === "Control") {
+        return;
+      }
+
+      const searchValue = this.value.toLowerCase().trim();
+
+      // We show everything in this case
+      if (searchValue === "") {
+        thiz.state.rows.forEach(function(row) {
+          row.style.display = "block";
+        });
+        return;
+      }
+
+      // We filter stuff in this one
+      thiz.state.rows.forEach(function(row) {
+        const rowText = row.textContent.toLowerCase();
+        if (rowText.indexOf(searchValue) === -1) {
+          row.style.display = "none";
+        } else {
+          row.style.display = "block";
+        }
+      });
+    };
+    searchInput.addEventListener("keyup", this.keyupHandler);
+
+  }
+
+  componentWillUnmount() {
+    const searchInput = document.getElementById("input_pomodoro_name");
+    searchInput.removeEventListener("keyup", this.keyupHandler);
   }
 
 }
