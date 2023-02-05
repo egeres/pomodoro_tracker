@@ -7,9 +7,15 @@ import { invoke } from '@tauri-apps/api';
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/api/notification';
 import { clearInterval, clearTimeout, setInterval, setTimeout } from 'worker-timers';
 
-// function App() {
+type MyProps = {
+};
 
-class App extends React.Component {
+type MyState = {
+  progress : number,
+  rows     : NodeListOf<Element> | any[],
+};
+
+class App extends React.Component<MyProps, MyState> {
 
   current_mode      = "not_started"
   time_sec_pomodoro = 50
@@ -241,7 +247,7 @@ class App extends React.Component {
     this.play_audio_click()
 
 
-    
+
 
     if (Math.abs(minutes_ago) >= 60)
     {
@@ -559,6 +565,11 @@ class App extends React.Component {
 
     </div>
   )
+
+  }
+
+  keyupHandler(event: any)
+  {
 
   }
 
