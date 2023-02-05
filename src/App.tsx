@@ -183,7 +183,7 @@ class App extends React.Component {
     
   }
 
-  close_pop_up()
+  close_pop_ups()
   {
     this.play_audio_click()
     for (let x of document.getElementsByClassName("overlay_container"))
@@ -197,7 +197,7 @@ class App extends React.Component {
   {
     // this.play_audio_click()
 
-    this.close_pop_up()
+    this.close_pop_ups()
 
     this.current_mode = "not_started"
 
@@ -229,7 +229,7 @@ class App extends React.Component {
       minutes_ago = Math.floor(((new Date() - new Date(last_date)) / 1000 / 60) - 0.5);
     }
 
-    this.close_pop_up()
+    this.close_pop_ups()
 
     // @ts-ignore
     let pomodoro_name = (document.getElementById("input_pomodoro_name")).value.trim()
@@ -239,10 +239,24 @@ class App extends React.Component {
       // WIP show popup
     }
     this.play_audio_click()
+
+
+    
+
+    if (Math.abs(minutes_ago) >= 60)
+    {
+      document.getElementById("overlay_warning_pomodoro_is_too_long").style.display = "flex"
+      let a     = Math.abs(minutes_ago)
+      let hours = Math.floor(a / 60.0)
+      document.getElementById("overlay_text_warning_pomodoro_is_too_long").innerHTML = "The last pomodoro was "+ hours +" hours ago. Are you sure you want to fill the time until now with a pomodoro?"
+      return ""
+    }
+
+
+
     this.current_mode = "not_started"
     this.update_visuals()
     this.time_sec_current = this.time_sec_pomodoro;
-    // arcProgress.updateProgress({progress:1.0})
     this.setState({progress:1.0})
 
     invoke("annotate_pomodoro", {
@@ -258,7 +272,7 @@ class App extends React.Component {
 
   start_retrospective_pomodoro_justnow()
   {
-    this.close_pop_up()
+    this.close_pop_ups()
 
     // @ts-ignore
     let pomodoro_name = (document.getElementById("input_pomodoro_name")).value
@@ -371,6 +385,41 @@ class App extends React.Component {
 
   }
 
+  async do_retrospective_pomodoro_fill_untilnow()
+  {
+    let minutes_ago = 25;
+    let last_date = await invoke("get_last_date_of_segment");
+    if (last_date !== "") {
+      // @ts-ignore
+      minutes_ago = Math.floor(((new Date() - new Date(last_date)) / 1000 / 60) - 0.5);
+    }
+
+    this.close_pop_ups()
+
+    // @ts-ignore
+    let pomodoro_name = (document.getElementById("input_pomodoro_name")).value.trim()
+    if (pomodoro_name == "" || pomodoro_name == null) {
+      return ""
+      // WIP show popup
+    }
+    this.play_audio_click()
+
+    this.current_mode = "not_started"
+    this.update_visuals()
+    this.time_sec_current = this.time_sec_pomodoro;
+    this.setState({progress:1.0})
+
+    invoke("annotate_pomodoro", {
+      pomodoroName : pomodoro_name,
+      durationInMin: minutes_ago,
+      typeOfEvent  : "fill_until_now"
+    }).then(to_create => {
+      this.create_rows_left_panel(to_create)
+    })
+
+    invoke("pomodoro_end");
+  }
+
   render()
   {
 
@@ -399,7 +448,7 @@ class App extends React.Component {
             data-eva-width  = "48"></i>
           </span>
           <i
-          onClick={() => this.close_pop_up()}
+          onClick={() => this.close_pop_ups()}
           data-eva        = "close-outline"
           data-eva-fill   = "#eee"
           data-eva-height = "48"
@@ -417,10 +466,23 @@ class App extends React.Component {
         <div>
           <div className="button_a" onClick={() => this.cancel_pomodoro()}>Yes</div>
           <div style={{"display":"inline-block", "minWidth":"20px"}}></div>
-          <div className="button_a" onClick={() => this.close_pop_up()}>No</div>
+          <div className="button_a" onClick={() => this.close_pop_ups()}>No</div>
         </div>
       </div>
       </div>
+
+
+      <div className="overlay_container noselect" id="overlay_warning_pomodoro_is_too_long">
+      <div className="pop_up_dialog_box_with_gradient_borders">
+        <p id="overlay_text_warning_pomodoro_is_too_long">Warning, the "retrospective pomodoro" you're adding maybe it's too long, are you sure this is right?</p>
+        <div>
+          <div className="button_a" onClick={() => this.do_retrospective_pomodoro_fill_untilnow()}>Yes</div>
+          <div style={{"display":"inline-block", "minWidth":"20px"}}></div>
+          <div className="button_a" onClick={() => this.close_pop_ups()}>No</div>
+        </div>
+      </div>
+      </div>
+
 
       <div className="overlay_container noselect" id="overlay_retrospective_pomodoro">
         <div className="pop_up_dialog_box_with_gradient_borders">
@@ -430,7 +492,7 @@ class App extends React.Component {
             <div style={{"display":"inline-block","minWidth":"20px"}}></div>
             <div className="button_a" onClick={() => this.start_retrospective_pomodoro_justnow()}>Just add one now</div>
             <div style={{"display":"inline-block","minWidth":"20px"}}></div>
-            <div className="button_a" onClick={() => this.close_pop_up()}>Cancel</div>
+            <div className="button_a" onClick={() => this.close_pop_ups()}>Cancel</div>
           </div>
         </div>
       </div>
