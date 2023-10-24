@@ -1,5 +1,4 @@
 
-
 To build and install:
 ```shell
 cargo tauri build
@@ -15,4 +14,3 @@ To start development mode of vite:
 ```
 npm run dev
 ```
-
