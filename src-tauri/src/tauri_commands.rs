@@ -1,17 +1,25 @@
+use chrono::Datelike;
 use chrono::Local;
 use std::collections::HashMap;
 use std::fs::*;
 use std::path::Path; // TimeZone, NaiveDateTime
 
+use crate::segment;
 use crate::utils::execute_script_python;
 use crate::utils::list_of_segments;
 use crate::utils::save_json;
 use crate::Segment;
-// use crate::CURRENT_SEGS;
+use crate::CURRENT_SEGS;
 use crate::PATH_ROOT_FOLDER;
 use crate::RUNNING;
 use crate::START_TIME;
 use crate::TIMER_TOTAL_S;
+
+macro_rules! s {
+    ($lit:expr) => {
+        $lit.to_string()
+    };
+}
 
 #[tauri::command]
 pub fn command_retrieve_last_pomodoros() -> Vec<String> {
@@ -72,127 +80,155 @@ pub fn annotate_pomodoro(
         create_dir_all(&a).unwrap();
     }
 
-    let mut all_segments = list_of_segments(&a.to_string());
+    // let mut all_segments = list_of_segments(&a.to_string());
+    // all_segments.push(this_segment);
+    // all_segments.sort();
+
+    let mut all_segments: Vec<Segment> = CURRENT_SEGS.lock().unwrap().clone();
     all_segments.push(this_segment);
     all_segments.sort();
+    // Update the global variable
+    *CURRENT_SEGS.lock().unwrap() = all_segments.clone();
 
-    let mut current_stack_of_segments: Vec<Segment> = vec![];
-    if all_segments.len() > 0 {
-        current_stack_of_segments.push(all_segments[0].clone());
+    let last_segment = all_segments.last().unwrap();
+
+    // Iterate the segments on reverse
+
+    let mut data_to_save: Vec<HashMap<String, String>> = Vec::new();
+    for s in all_segments.iter().rev() {
+        if s.start.day() != last_segment.start.day() {
+            break;
+        }
+
+        let mut item_map: HashMap<String, String> = HashMap::new();
+        item_map.insert("name".to_string(), s.name.to_string());
+        item_map.insert(s!("start"), s.start.format("%Y-%m-%d %H:%M:%S").to_string());
+        item_map.insert(s!("end"), s.end.format("%Y-%m-%d %H:%M:%S").to_string());
+        if s.type_of_event.is_some() {
+            item_map.insert(s!("type_of_event"), s.type_of_event.clone().unwrap());
+        }
+        data_to_save.push(item_map);
     }
 
-    for segment in all_segments.iter() {
-        if all_segments.len() == 1 {
-            let filename: String = format!(
-                "{}/{}.json",
-                a,
-                current_stack_of_segments[0].start.format("%Y-%m-%d")
-            );
-            let mut data_to_save: Vec<HashMap<String, String>> = Vec::new();
-            let s = segment;
-            // for s in current_stack_of_segments.iter()
-            // {
-            let mut item_map: HashMap<String, String> = HashMap::new();
-            item_map.insert("name".to_string(), s.name.to_string());
-            item_map.insert(
-                "start".to_string(),
-                s.start.format("%Y-%m-%d %H:%M:%S").to_string(),
-            );
-            item_map.insert(
-                "end".to_string(),
-                s.end.format("%Y-%m-%d %H:%M:%S").to_string(),
-            );
-            if s.type_of_event.is_some() {
-                item_map.insert(
-                    "type_of_event".to_string(),
-                    s.type_of_event.clone().unwrap(),
-                );
-            }
-            data_to_save.push(item_map);
-            // }
-            save_json(&filename, &data_to_save);
-        }
+    // We save the file
+    let filename: String = format!(
+        "{}/{}.json",
+        a,
+        // current_stack_of_segments[0].start.format("%Y-%m-%d")
+        last_segment.start.format("%Y-%m-%d")
+    );
+    save_json(&filename, &data_to_save);
 
-        // This left_right exists to gradually fill `current_stack_of_segments`, and emit a file when the stack is full
-        // Each time `current_stack_of_segments` is full it represents a day
-        let left = format!("{}", segment.start.format("%Y-%m-%d"));
-        let right_0 = current_stack_of_segments.last();
-        let right_1 = right_0.unwrap().start;
-        let right = format!("{}", right_1.format("%Y-%m-%d"));
+    // let mut current_stack_of_segments: Vec<Segment> = vec![];
+    // if all_segments.len() > 0 {
+    //     current_stack_of_segments.push(all_segments[0].clone());
+    // }
 
-        if current_stack_of_segments.len() > 0 {
-            if current_stack_of_segments.last().unwrap() == segment {
-                continue;
-            }
-        }
-
-        if left == right
-        // The segment we have to append and the last one in the stack are from the same day
-        {
-            current_stack_of_segments.push((*segment).clone());
-        } else {
-            let filename: String = format!(
-                "{}/{}.json",
-                a,
-                current_stack_of_segments[0].start.format("%Y-%m-%d")
-            );
-            let mut data_to_save: Vec<HashMap<String, String>> = Vec::new();
-
-            for s in current_stack_of_segments.iter() {
-                let mut item_map: HashMap<String, String> = HashMap::new();
-                item_map.insert("name".to_string(), s.name.to_string());
-                item_map.insert(
-                    "start".to_string(),
-                    s.start.format("%Y-%m-%d %H:%M:%S").to_string(),
-                );
-                item_map.insert(
-                    "end".to_string(),
-                    s.end.format("%Y-%m-%d %H:%M:%S").to_string(),
-                );
-                if s.type_of_event.is_some() {
-                    item_map.insert(
-                        "type_of_event".to_string(),
-                        s.type_of_event.clone().unwrap(),
-                    );
-                }
-                data_to_save.push(item_map);
-            }
-
-            save_json(&filename, &data_to_save);
-
-            current_stack_of_segments = Vec::new();
-            current_stack_of_segments.push((*segment).clone());
-        }
-    }
-
-    if current_stack_of_segments.len() > 0 {
-        let filename: String = format!(
-            "{}/{}.json",
-            a,
-            current_stack_of_segments[0].start.format("%Y-%m-%d")
-        );
-        let mut data_to_save: Vec<HashMap<String, String>> = Vec::new();
-        for s in current_stack_of_segments.iter() {
-            let mut item_map: HashMap<String, String> = HashMap::new();
-            item_map.insert("name".to_string(), s.name.to_string());
-            item_map.insert(
-                "start".to_string(),
-                s.start.format("%Y-%m-%d %H:%M:%S").to_string(),
-            );
-            item_map.insert(
-                "end".to_string(),
-                s.end.format("%Y-%m-%d %H:%M:%S").to_string(),
-            );
-            if s.type_of_event.is_some() {
-                item_map.insert(
-                    "type_of_event".to_string(),
-                    s.type_of_event.clone().unwrap(),
-                );
-            }
-            data_to_save.push(item_map);
-        }
-        save_json(&filename, &data_to_save);
-    }
+    // for segment in all_segments.iter() {
+    //     if all_segments.len() == 1 {
+    //         let filename: String = format!(
+    //             "{}/{}.json",
+    //             a,
+    //             current_stack_of_segments[0].start.format("%Y-%m-%d")
+    //         );
+    //         let mut data_to_save: Vec<HashMap<String, String>> = Vec::new();
+    //         let s = segment;
+    //         // for s in current_stack_of_segments.iter()
+    //         // {
+    //         let mut item_map: HashMap<String, String> = HashMap::new();
+    //         item_map.insert("name".to_string(), s.name.to_string());
+    //         item_map.insert(
+    //             "start".to_string(),
+    //             s.start.format("%Y-%m-%d %H:%M:%S").to_string(),
+    //         );
+    //         item_map.insert(
+    //             "end".to_string(),
+    //             s.end.format("%Y-%m-%d %H:%M:%S").to_string(),
+    //         );
+    //         if s.type_of_event.is_some() {
+    //             item_map.insert(
+    //                 "type_of_event".to_string(),
+    //                 s.type_of_event.clone().unwrap(),
+    //             );
+    //         }
+    //         data_to_save.push(item_map);
+    //         // }
+    //         save_json(&filename, &data_to_save);
+    //     }
+    //     // This left_right exists to gradually fill `current_stack_of_segments`, and emit a file when the stack is full
+    //     // Each time `current_stack_of_segments` is full it represents a day
+    //     let left = format!("{}", segment.start.format("%Y-%m-%d"));
+    //     let right_0 = current_stack_of_segments.last();
+    //     let right_1 = right_0.unwrap().start;
+    //     let right = format!("{}", right_1.format("%Y-%m-%d"));
+    //     if current_stack_of_segments.len() > 0 {
+    //         if current_stack_of_segments.last().unwrap() == segment {
+    //             continue;
+    //         }
+    //     }
+    //     if left == right
+    //     // The segment we have to append and the last one in the stack are from the same day
+    //     {
+    //         current_stack_of_segments.push((*segment).clone());
+    //     } else {
+    //         let filename: String = format!(
+    //             "{}/{}.json",
+    //             a,
+    //             current_stack_of_segments[0].start.format("%Y-%m-%d")
+    //         );
+    //         let mut data_to_save: Vec<HashMap<String, String>> = Vec::new();
+    //         for s in current_stack_of_segments.iter() {
+    //             let mut item_map: HashMap<String, String> = HashMap::new();
+    //             item_map.insert("name".to_string(), s.name.to_string());
+    //             item_map.insert(
+    //                 "start".to_string(),
+    //                 s.start.format("%Y-%m-%d %H:%M:%S").to_string(),
+    //             );
+    //             item_map.insert(
+    //                 "end".to_string(),
+    //                 s.end.format("%Y-%m-%d %H:%M:%S").to_string(),
+    //             );
+    //             if s.type_of_event.is_some() {
+    //                 item_map.insert(
+    //                     "type_of_event".to_string(),
+    //                     s.type_of_event.clone().unwrap(),
+    //                 );
+    //             }
+    //             data_to_save.push(item_map);
+    //         }
+    //         save_json(&filename, &data_to_save);
+    //         current_stack_of_segments = Vec::new();
+    //         current_stack_of_segments.push((*segment).clone());
+    //     }
+    // }
+    // if current_stack_of_segments.len() > 0 {
+    //     let filename: String = format!(
+    //         "{}/{}.json",
+    //         a,
+    //         current_stack_of_segments[0].start.format("%Y-%m-%d")
+    //     );
+    //     let mut data_to_save: Vec<HashMap<String, String>> = Vec::new();
+    //     for s in current_stack_of_segments.iter() {
+    //         let mut item_map: HashMap<String, String> = HashMap::new();
+    //         item_map.insert("name".to_string(), s.name.to_string());
+    //         item_map.insert(
+    //             "start".to_string(),
+    //             s.start.format("%Y-%m-%d %H:%M:%S").to_string(),
+    //         );
+    //         item_map.insert(
+    //             "end".to_string(),
+    //             s.end.format("%Y-%m-%d %H:%M:%S").to_string(),
+    //         );
+    //         if s.type_of_event.is_some() {
+    //             item_map.insert(
+    //                 "type_of_event".to_string(),
+    //                 s.type_of_event.clone().unwrap(),
+    //             );
+    //         }
+    //         data_to_save.push(item_map);
+    //     }
+    //     save_json(&filename, &data_to_save);
+    // }
 
     // // List of segments
     // let mut _out = list_of_segments(&a.to_string());

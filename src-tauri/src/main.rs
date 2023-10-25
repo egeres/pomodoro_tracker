@@ -40,14 +40,24 @@ fn main() {
         *TIMER_TOTAL_S.lock().unwrap() = 60 * 25;
     }
 
-    // {
-    // 	let a : String = PATH_ROOT_FOLDER.lock().unwrap().to_string();
-    // 	let mut _out = list_of_segments(&a.to_string());
-    // 	_out.sort();
-    // 	*CURRENT_SEGS.lock().unwrap() = _out;
-    // }
-    // // Print length of CURRENT_SEGS
-    // println!("CURRENT_SEGS: {:?}", CURRENT_SEGS.lock().unwrap().len());
+    {
+        let a: String = PATH_ROOT_FOLDER.lock().unwrap().to_string();
+        let mut _out = list_of_segments(&a.to_string());
+        _out.sort();
+        *CURRENT_SEGS.lock().unwrap() = _out;
+
+        // For debugging n stuff
+        // // Print the first 3
+        // for i in 0..std::cmp::min(3, _out.len()) {
+        // 	println!("{}: {:?}", i, _out[i]);
+        // }
+        // // Print the last 3
+        // for i in std::cmp::max(0, _out.len() - 3).._out.len() {
+        // 	println!("{}: {:?}", i, _out[i]);
+        // }
+    }
+    // Print length of CURRENT_SEGS
+    println!("CURRENT_SEGS len: {:?}", CURRENT_SEGS.lock().unwrap().len());
 
     // Folder where the executable is located
     // let new_path = std::env::current_exe().unwrap().parent().unwrap().to_str().unwrap().to_string();
