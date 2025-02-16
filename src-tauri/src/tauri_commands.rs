@@ -325,7 +325,36 @@ pub fn pomodoro_end() {
 
     *RUNNING.lock().unwrap() = false;
 }
+
 #[tauri::command]
-pub fn pomodoro_cancel() {
+pub fn pomodoro_cancel(pomodoro_name: String, duration_in_secs: Option<i32>) {
+
+    println!("Cancelling pomodoro...");
+
+    if let Err(err) = (|| -> Result<(), Box<dyn std::error::Error>> {
+        let now = chrono::Utc::now().to_rfc3339();
+        let duration_str = match duration_in_secs {
+            Some(duration) => duration.to_string(),
+            None => "null".to_string(),
+        };
+        let line_to_write = format!("{}, {}, {}", now, pomodoro_name, duration_str);
+        let root_path = PATH_ROOT_FOLDER.lock().unwrap().to_string();
+        let csv_path = Path::new(&root_path).join("pomodoro_cancels.csv");
+        if !csv_path.exists() {
+            std::fs::write(&csv_path, "datetime, pomodoro_name, duration_secs\n").unwrap();
+        }
+        std::fs::OpenOptions::new()
+            .append(true)
+            .open(&csv_path)
+            .unwrap()
+            .write_all(format!("{}\n", line_to_write).as_bytes())?;
+
+        println!("Pomodoro cancelled: {}", line_to_write);
+
+        Ok(())
+    })() {
+        eprintln!("Error in pomodoro_cancel: {}", err);
+    }
+
     *RUNNING.lock().unwrap() = false;
 }

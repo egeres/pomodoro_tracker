@@ -204,6 +204,20 @@ class App extends React.Component<MyProps, MyState> {
   {
     // this.play_audio_click()
 
+    // @ts-ignore
+    let pomodoro_name = (document.getElementById("input_pomodoro_name")).value.trim()
+    console.log(pomodoro_name)
+    if (pomodoro_name == "" || pomodoro_name == null)
+    
+    console.log("Cancelling pomodoro...:", pomodoro_name);
+
+    core.invoke("pomodoro_cancel", {
+      pomodoroName : pomodoro_name,
+      durationInSecs: Math.floor((1 - this.state.progress) * this.time_sec_pomodoro)
+    });
+
+
+
     this.close_pop_ups()
 
     this.current_mode = "not_started"
