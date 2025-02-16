@@ -11,6 +11,6 @@ cargo tauri dev
 ```
 
 To start development mode of vite:
-```
+```shell
 npm run dev
 ```

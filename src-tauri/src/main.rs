@@ -16,6 +16,7 @@ use tauri_commands::*;
 mod server_http;
 use server_http::start_httpserver;
 mod utils;
+use tauri::Manager;
 
 use crate::utils::list_of_segments;
 
@@ -63,12 +64,36 @@ fn main() {
     // let new_path = std::env::current_exe().unwrap().parent().unwrap().to_str().unwrap().to_string();
     // *PATH_DIR_LOCAL.lock().unwrap() = new_path.clone();
 
-    let a = tauri::api::path::local_data_dir().unwrap();
-    *PATH_DIR_LOCAL.lock().unwrap() = a.to_str().unwrap().to_string();
+    // let a = tauri::api::path::local_data_dir().unwrap();
+    // *PATH_DIR_LOCAL.lock().unwrap() = a.to_str().unwrap().to_string();
+    // let a = tauri::path::local_data_dir().unwrap();
+    // let a = tauri::path::app_local_data_dir(&tauri::Config::default()).unwrap();
+    // let a = tauri::path::app_data_dir(&tauri::Config::default()).unwrap();
+
+
+    // let window = app.get_webview_window("main").unwrap();
+    // window.open_devtools();
+
+    // tauri::Builder::default()
+    // .setup(|app| {
+    //     // Access the local data directory
+    //     let local_data_dir = app.path().app_local_data_dir().unwrap();
+    //     // Use `local_data_dir` as needed
+    //     *PATH_DIR_LOCAL.lock().unwrap() = local_data_dir.to_str().unwrap().to_string();
+    //     println!("eee: {:?}", local_data_dir.as_path().to_string_lossy());
+    //     println!("PATH_DIR_LOCAL: {:?}", *PATH_DIR_LOCAL.lock().unwrap());
+    //     #[cfg(debug_assertions)]
+    //     app.get_webview_window("main").unwrap().open_devtools();
+    //     Ok(())
+    // })
+    // .run(tauri::generate_context!())
+    // .expect("error while running tauri application");
+
+    // *PATH_DIR_LOCAL.lock().unwrap() = a.to_str().unwrap().to_string();
 
     // #[cfg(debug_assertions)] {
-    println!("eee: {:?}", a.as_path().to_string_lossy());
-    println!("PATH_DIR_LOCAL: {:?}", *PATH_DIR_LOCAL.lock().unwrap());
+    // println!("eee: {:?}", a.as_path().to_string_lossy());
+    // println!("PATH_DIR_LOCAL: {:?}", *PATH_DIR_LOCAL.lock().unwrap());
 
     // let path_dir_local_exe_file : String =
     // }
@@ -98,6 +123,15 @@ fn main() {
 
     // Server for tauri
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
             annotate_pomodoro,
             command_retrieve_last_pomodoros,

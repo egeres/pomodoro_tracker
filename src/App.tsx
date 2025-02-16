@@ -3,8 +3,9 @@ import './App.css'
 import MyArc from './MyArc';
 import * as eva from 'eva-icons';
 import React from 'react';
-import { invoke } from '@tauri-apps/api';
-import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/api/notification';
+// import { invoke } from '@tauri-apps/api';
+import { core } from '@tauri-apps/api';
+import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
 import { clearInterval, clearTimeout, setInterval, setTimeout } from 'worker-timers';
 
 type MyProps = {
@@ -150,7 +151,7 @@ class App extends React.Component<MyProps, MyState> {
         
       this.update_visuals()
 
-      invoke("pomodoro_start");
+      core.invoke("pomodoro_start");
 
       let interval_timer = setInterval(() => {
 
@@ -172,14 +173,14 @@ class App extends React.Component<MyProps, MyState> {
           this.update_visuals()
           this.play_audio_notification()
           sendNotification('🍅 Pomodoro finished!')
-          invoke("annotate_pomodoro", {
+          core.invoke("annotate_pomodoro", {
             pomodoroName : pomodoro_name,
             durationInMin: Math.floor(this.time_sec_pomodoro / 60.0),
             typeOfEvent  : "timer_ended"
           }).then(to_create => {
             this.create_rows_left_panel(to_create)
           })
-          invoke("pomodoro_end");
+          core.invoke("pomodoro_end");
         }
       }, 1000)
 
@@ -222,13 +223,13 @@ class App extends React.Component<MyProps, MyState> {
     // arcProgress.updateProgress({progress:1.0})
     this.setState({progress:1.0})
 
-    invoke("pomodoro_cancel");
+    // core.invoke("pomodoro_cancel");
   }
 
   async start_retrospective_pomodoro_fill_untilnow()
   {
     let minutes_ago = 25;
-    let last_date = await invoke("get_last_date_of_segment");
+    let last_date = await core.invoke("get_last_date_of_segment");
     if (last_date !== "")
     {
       // @ts-ignore
@@ -265,7 +266,7 @@ class App extends React.Component<MyProps, MyState> {
     this.time_sec_current = this.time_sec_pomodoro;
     this.setState({progress:1.0})
 
-    invoke("annotate_pomodoro", {
+    core.invoke("annotate_pomodoro", {
       pomodoroName : pomodoro_name,
       durationInMin: minutes_ago,
       typeOfEvent  : "fill_until_now"
@@ -273,7 +274,7 @@ class App extends React.Component<MyProps, MyState> {
       this.create_rows_left_panel(to_create)
     })
 
-    invoke("pomodoro_end");
+    core.invoke("pomodoro_end");
   }
 
   start_retrospective_pomodoro_justnow()
@@ -294,7 +295,7 @@ class App extends React.Component<MyProps, MyState> {
     // arcProgress.updateProgress({progress:1.0})
     this.setState({progress:1.0})
 
-    invoke("annotate_pomodoro", {
+    core.invoke("annotate_pomodoro", {
       pomodoroName : pomodoro_name,
       durationInMin: Math.floor(this.time_sec_pomodoro / 60),
       typeOfEvent  : "just_now",
@@ -302,7 +303,7 @@ class App extends React.Component<MyProps, MyState> {
       this.create_rows_left_panel(to_create)
     })
 
-    invoke("pomodoro_end");
+    core.invoke("pomodoro_end");
   }
 
   set_value_if_input(the_value)
@@ -394,7 +395,7 @@ class App extends React.Component<MyProps, MyState> {
   async do_retrospective_pomodoro_fill_untilnow()
   {
     let minutes_ago = 25;
-    let last_date = await invoke("get_last_date_of_segment");
+    let last_date = await core.invoke("get_last_date_of_segment");
     if (last_date !== "") {
       // @ts-ignore
       minutes_ago = Math.floor(((new Date() - new Date(last_date)) / 1000 / 60) - 0.5);
@@ -415,7 +416,7 @@ class App extends React.Component<MyProps, MyState> {
     this.time_sec_current = this.time_sec_pomodoro;
     this.setState({progress:1.0})
 
-    invoke("annotate_pomodoro", {
+    core.invoke("annotate_pomodoro", {
       pomodoroName : pomodoro_name,
       durationInMin: minutes_ago,
       typeOfEvent  : "fill_until_now"
@@ -423,7 +424,7 @@ class App extends React.Component<MyProps, MyState> {
       this.create_rows_left_panel(to_create)
     })
 
-    invoke("pomodoro_end");
+    core.invoke("pomodoro_end");
   }
 
   render()
@@ -577,12 +578,12 @@ class App extends React.Component<MyProps, MyState> {
   {
     eva.replace();
 
-    invoke('command_retrieve_last_pomodoros').then(to_create => {
+    core.invoke('command_retrieve_last_pomodoros').then(to_create => {
       console.log(to_create);
       this.create_rows_left_panel(to_create)
     })
 
-    invoke("conf_get_time_pomodoro_in_min", {}).then((time:number) => {
+    core.invoke("conf_get_time_pomodoro_in_min", {}).then((time:number) => {
       this.time_sec_pomodoro = Math.floor(time * 60);
       this.time_sec_current  = this.time_sec_pomodoro;
       this.update_visuals();

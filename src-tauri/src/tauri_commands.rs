@@ -14,6 +14,7 @@ use crate::PATH_ROOT_FOLDER;
 use crate::RUNNING;
 use crate::START_TIME;
 use crate::TIMER_TOTAL_S;
+use std::io::Write;
 
 macro_rules! s {
     ($lit:expr) => {
@@ -324,7 +325,6 @@ pub fn pomodoro_end() {
 
     *RUNNING.lock().unwrap() = false;
 }
-
 #[tauri::command]
 pub fn pomodoro_cancel() {
     *RUNNING.lock().unwrap() = false;
