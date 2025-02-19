@@ -14,7 +14,9 @@ use crate::PATH_ROOT_FOLDER;
 use crate::RUNNING;
 use crate::START_TIME;
 use crate::TIMER_TOTAL_S;
+use std::env;
 use std::io::Write;
+use whoami;
 
 macro_rules! s {
     ($lit:expr) => {
@@ -328,20 +330,50 @@ pub fn pomodoro_end() {
 
 #[tauri::command]
 pub fn pomodoro_cancel(pomodoro_name: String, duration_in_secs: Option<i32>) {
+    let username = whoami::username(); // Equivalent to os.login()
+    let platform = env::consts::OS; // Equivalent to platform.system()
+    let hostname = whoami::fallible::hostname().unwrap_or("null".to_string());
+    let way_this_info_was_added = "automatic".to_string();
+    let exe_path = env::current_exe() // Equivalent to sys.argv[0]
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
 
     println!("Cancelling pomodoro...");
 
     if let Err(err) = (|| -> Result<(), Box<dyn std::error::Error>> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = chrono::Utc::now();
+
+        let start_time = match duration_in_secs {
+            Some(duration) => now - chrono::Duration::seconds(duration as i64),
+            None => now,
+        };
+
         let duration_str = match duration_in_secs {
             Some(duration) => duration.to_string(),
             None => "null".to_string(),
         };
-        let line_to_write = format!("{}, {}, {}", now, pomodoro_name, duration_str);
+
+        let line_to_write = format!(
+            "{}, {}, {}, {}, {}, {}, {}, {}, {}",
+            now.to_rfc3339(),
+            username,
+            platform,
+            hostname,
+            way_this_info_was_added,
+            exe_path,
+            pomodoro_name,
+            duration_str,
+            start_time.to_rfc3339()
+        );
         let root_path = PATH_ROOT_FOLDER.lock().unwrap().to_string();
         let csv_path = Path::new(&root_path).join("pomodoro_cancels.csv");
         if !csv_path.exists() {
-            std::fs::write(&csv_path, "datetime, pomodoro_name, duration_secs\n").unwrap();
+            std::fs::write(
+                &csv_path,
+                "datetime,username,platform,hostname,way_this_info_was_added,exe_path,pomodoro_name,duration_secs,pomodoro_start_datetime\n",
+            )
+            .unwrap();
         }
         std::fs::OpenOptions::new()
             .append(true)
