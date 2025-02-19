@@ -154,8 +154,8 @@ pub fn execute_script_python(script_to_execute: &str) -> Result<(), Box<dyn Erro
     Ok(())
 }
 
-/// Writes 0.0 or 1.0 in the designated file to indicate the progress of the
-/// pomodoro
+/// Starts a loop that writes 0.0 or 1.0 in the designated file to indicate the progress
+/// of the pomodoro
 pub fn filewritter(file_name: &str) {
     let mut file_name_l = file_name.to_string();
 

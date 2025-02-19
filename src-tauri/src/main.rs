@@ -70,7 +70,6 @@ fn main() {
     // let a = tauri::path::app_local_data_dir(&tauri::Config::default()).unwrap();
     // let a = tauri::path::app_data_dir(&tauri::Config::default()).unwrap();
 
-
     // let window = app.get_webview_window("main").unwrap();
     // window.open_devtools();
 
@@ -111,12 +110,12 @@ fn main() {
     // File writter process
     // let path_dir_local = *PATH_DIR_LOCAL.lock().unwrap();
     // let path_fil_local: String = format!("{}/{}", &new_path, "current_state.txt");
-    let path_fil_local: String = format!(
-        "{}/{}",
-        *PATH_DIR_LOCAL.lock().unwrap(),
-        "current_state_pomodoro.txt"
-    );
-    std::thread::spawn(move || utils::filewritter(&path_fil_local));
+    // let path_fil_local: String = format!(
+    //     "{}/{}",
+    //     *PATH_DIR_LOCAL.lock().unwrap(),
+    //     "current_state_pomodoro.txt"
+    // );
+    // std::thread::spawn(move || utils::filewritter(&path_fil_local));
 
     // Server for http
     std::thread::spawn(start_httpserver);
@@ -132,6 +131,37 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_fs::init())
+        .setup(|app| {
+
+            // Create console window in release mode
+            // #[cfg(not(debug_assertions))]
+            // {
+            //     use std::fs::OpenOptions;
+            //     use std::io::Write;
+            //     // Allocate console in Windows release builds
+            //     #[cfg(target_os = "windows")]
+            //     unsafe {
+            //         winapi::um::wincon::AttachConsole(winapi::um::wincon::ATTACH_PARENT_PROCESS);
+            //     }
+            // }
+
+            // Access the local data directory
+            let local_data_dir = app.path().app_local_data_dir().unwrap();
+            // Use `local_data_dir` as needed
+            *PATH_DIR_LOCAL.lock().unwrap() = local_data_dir.to_str().unwrap().to_string();
+            println!("eee: {:?}", local_data_dir.as_path().to_string_lossy());
+            println!("PATH_DIR_LOCAL: {:?}", *PATH_DIR_LOCAL.lock().unwrap());
+            // #[cfg(debug_assertions)]
+            // app.get_webview_window("main").unwrap().open_devtools();
+            let path_fil_local: String = format!(
+                "{}/{}",
+                *PATH_DIR_LOCAL.lock().unwrap(),
+                "current_state_pomodoro.txt"
+            );
+            std::thread::spawn(move || utils::filewritter(&path_fil_local));
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             annotate_pomodoro,
             command_retrieve_last_pomodoros,
