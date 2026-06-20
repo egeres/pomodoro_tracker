@@ -24,15 +24,13 @@ use whoami;
 
 #[tauri::command]
 pub fn command_retrieve_last_pomodoros() -> Vec<String> {
-    // List of segments
-    let a: String = PATH_ROOT_FOLDER.lock().unwrap().to_string();
+    // Use the in-memory cache (already loaded at startup and kept up to date by
+    // annotate_pomodoro / save_config) instead of re-reading every file on disk.
+    let segments = CURRENT_SEGS.lock().unwrap();
 
-    let mut _out = list_of_segments(&a.to_string());
-    _out.sort();
-
-    // We get the unique names of the segments
+    // We get the unique names of the segments, most recent first.
     let mut unique_names: Vec<String> = Vec::new();
-    for i in _out.iter().rev() {
+    for i in segments.iter().rev() {
         if !unique_names.contains(&i.name) {
             unique_names.push(i.name.clone());
         }
@@ -66,6 +64,8 @@ pub fn annotate_pomodoro(
         generated_by: Some(format!("pomodoro_app {}", env!("CARGO_PKG_VERSION"))),
         way_this_info_was_added: Some("manual".to_string()),
         datetime_of_annotation: Some(now.with_timezone(&Utc).to_rfc3339_opts(SecondsFormat::Micros, false)),
+        // Freshly created, not yet written to disk.
+        source_date: None,
     };
 
     #[cfg(debug_assertions)]
@@ -96,21 +96,54 @@ pub fn annotate_pomodoro(
     let mut all_segments: Vec<Segment> = CURRENT_SEGS.lock().unwrap().clone();
     all_segments.push(this_segment);
     all_segments.sort();
-    // Update the global variable
-    *CURRENT_SEGS.lock().unwrap() = all_segments.clone();
 
-    let last_segment = all_segments.last().unwrap();
+    // Daily files are named by UTC date (e.g. 2021-11-27_pomodoro.json) and the
+    // timestamps inside are stored in UTC too. The file a segment belongs to is
+    // decided by the UTC date of its `start`.
+    //
+    // Rather than rewriting every day file on each annotation, we only rewrite
+    // the files that actually change ("dirty" dates):
+    //   * the new segment's UTC date (it has no source file yet), and
+    //   * any date involved in a "misfiled" segment, i.e. one whose source file
+    //     date differs from its UTC date. Both the file it currently lives in
+    //     and the file it should move to need rewriting.
+    // This keeps the common case at a single file write while still guaranteeing
+    // no segment is ever dropped: a misfiled pomodoro is moved to its correct
+    // file instead of being silently deleted.
+    use std::collections::{BTreeMap, HashSet};
 
-    // Iterate the segments on reverse
+    let utc_date_of = |s: &Segment| s.start.with_timezone(&Utc).date_naive();
 
-    // Daily files are grouped by UTC date so they stay consistent with the
-    // UTC timestamps stored inside them.
-    let last_utc_date = last_segment.start.with_timezone(&Utc).date_naive();
+    let mut dirty_dates: HashSet<chrono::NaiveDate> = HashSet::new();
+    for s in all_segments.iter() {
+        let target = utc_date_of(s);
+        match s.source_date {
+            // Already stored in the correct file: nothing to do.
+            Some(src) if src == target => {}
+            // Misfiled: rewrite both the old and the new file.
+            Some(src) => {
+                dirty_dates.insert(src);
+                dirty_dates.insert(target);
+            }
+            // New (never written): goes into its UTC date file.
+            None => {
+                dirty_dates.insert(target);
+            }
+        }
+    }
 
-    let mut data_to_save: Vec<serde_json::Value> = Vec::new();
-    for s in all_segments.iter().rev() {
-        if s.start.with_timezone(&Utc).date_naive() != last_utc_date {
-            break;
+    // Build the JSON content for each dirty date. Dates are pre-seeded with an
+    // empty vec so a file that should become empty is still rewritten as `[]`
+    // (rather than keeping stale, now-relocated entries).
+    let mut segments_by_date: BTreeMap<chrono::NaiveDate, Vec<serde_json::Value>> = BTreeMap::new();
+    for d in dirty_dates.iter() {
+        segments_by_date.entry(*d).or_default();
+    }
+
+    for s in all_segments.iter() {
+        let target = utc_date_of(s);
+        if !dirty_dates.contains(&target) {
+            continue;
         }
 
         let mut item = serde_json::Map::new();
@@ -156,12 +189,28 @@ pub fn annotate_pomodoro(
             }
         }
 
-        data_to_save.push(serde_json::Value::Object(item));
+        segments_by_date
+            .entry(target)
+            .or_default()
+            .push(serde_json::Value::Object(item));
     }
 
-    // We save the file (named by UTC date, e.g. 2021-11-27_pomodoro.json).
-    let filename: String = format!("{}/{}_pomodoro.json", a, last_utc_date.format("%Y-%m-%d"));
-    save_json(&filename, &data_to_save);
+    // Rewrite only the dirty day files.
+    for (utc_date, data_to_save) in segments_by_date.iter() {
+        let filename: String =
+            format!("{}/{}_pomodoro.json", a, utc_date.format("%Y-%m-%d"));
+        save_json(&filename, data_to_save);
+    }
+
+    // Everything is now stored in the file matching its UTC date, so mark each
+    // segment's source accordingly. This makes future saves see no misfiling and
+    // only rewrite the single file a new pomodoro lands in.
+    for s in all_segments.iter_mut() {
+        s.source_date = Some(utc_date_of(s));
+    }
+
+    // Update the global cache.
+    *CURRENT_SEGS.lock().unwrap() = all_segments.clone();
 
     // let mut current_stack_of_segments: Vec<Segment> = vec![];
     // if all_segments.len() > 0 {
@@ -396,21 +445,17 @@ pub fn save_config(
 
 #[tauri::command]
 pub fn get_last_date_of_segment() -> String {
-    let mut last_date: String = "".to_string();
-    let a: String = PATH_ROOT_FOLDER.lock().unwrap().to_string();
+    // Use the in-memory cache (kept sorted by start) instead of re-reading every
+    // file on disk just to find the most recent segment.
+    let segments = CURRENT_SEGS.lock().unwrap();
 
-    let mut list_of_files: Vec<Segment> = list_of_segments(&a.to_string());
-    list_of_files.sort();
-
-    if list_of_files.len() > 0 {
-        let last_file = list_of_files.last().unwrap();
-        last_date = last_file
+    match segments.last() {
+        Some(last) => last
             .end
             .with_timezone(&Utc)
-            .to_rfc3339_opts(SecondsFormat::Micros, false);
+            .to_rfc3339_opts(SecondsFormat::Micros, false),
+        None => "".to_string(),
     }
-
-    last_date
 }
 
 #[tauri::command]

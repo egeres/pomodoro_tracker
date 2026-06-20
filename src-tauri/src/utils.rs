@@ -1,5 +1,6 @@
 use chrono::DateTime;
 use chrono::Local;
+use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use chrono::TimeZone;
 use std::collections::HashMap;
@@ -146,6 +147,14 @@ pub fn list_of_segments(path_dir: &String) -> Vec<Segment> {
     for file_name in files.iter() {
         let full_path = format!("{}/{}", path_dir, file_name);
 
+        // The day file is named `YYYY-MM-DD_pomodoro.json`; remember which date
+        // this segment was physically stored under so the save logic can tell
+        // when a segment is misfiled (its file date != its UTC date).
+        let source_date = file_name
+            .split('_')
+            .next()
+            .and_then(|d| NaiveDate::parse_from_str(d, "%Y-%m-%d").ok());
+
         // Malformed or unreadable JSON files are skipped entirely.
         let items = match load_json(&full_path) {
             Ok(items) => items,
@@ -228,6 +237,7 @@ pub fn list_of_segments(path_dir: &String) -> Vec<Segment> {
                 generated_by: i.get("generated_by").map(|x| x.to_string()),
                 way_this_info_was_added: i.get("way_this_info_was_added").map(|x| x.to_string()),
                 datetime_of_annotation: i.get("datetime_of_annotation").map(|x| x.to_string()),
+                source_date,
             });
         }
     }

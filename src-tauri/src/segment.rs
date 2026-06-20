@@ -1,4 +1,4 @@
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Local, NaiveDate};
 use std::cmp::Ordering; // TimeZone, NaiveDateTime
 
 #[derive(Debug, Clone)]
@@ -16,6 +16,12 @@ pub struct Segment {
     pub generated_by: Option<String>,
     pub way_this_info_was_added: Option<String>,
     pub datetime_of_annotation: Option<String>,
+    // The date encoded in the file this segment was loaded from (parsed from the
+    // `YYYY-MM-DD_pomodoro.json` filename). `None` for freshly created segments
+    // that have not been written to disk yet. Used to detect "misfiled" segments
+    // whose day file no longer matches their UTC date, so the save logic knows
+    // which files actually need rewriting. Not part of equality/ordering.
+    pub source_date: Option<NaiveDate>,
 }
 
 impl Ord for Segment {
