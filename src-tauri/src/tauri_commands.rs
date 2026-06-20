@@ -59,11 +59,19 @@ pub fn annotate_pomodoro(
 
     let the_time: i32 = duration_in_min.unwrap_or(25);
 
+    let now = Local::now();
     let this_segment = Segment {
-        start: Local::now() - chrono::Duration::minutes(the_time as i64),
-        end: Local::now(),
+        start: now - chrono::Duration::minutes(the_time as i64),
+        end: now,
         name: pomodoro_name,
         type_of_event: type_of_event,
+        uuid: Some(uuid::Uuid::new_v4().to_string()),
+        os_login: Some(whoami::username()),
+        platform: Some(env::consts::OS.to_string()),
+        machine_name: Some(whoami::fallible::hostname().unwrap_or("null".to_string())),
+        generated_by: Some(format!("pomodoro_app {}", env!("CARGO_PKG_VERSION"))),
+        way_this_info_was_added: Some("manual".to_string()),
+        datetime_of_annotation: Some(now.with_timezone(&Utc).to_rfc3339_opts(SecondsFormat::Micros, false)),
     };
 
     #[cfg(debug_assertions)]
@@ -122,9 +130,23 @@ pub fn annotate_pomodoro(
             s!("end"),
             s.end.with_timezone(&Utc).to_rfc3339_opts(SecondsFormat::Micros, false),
         );
-        if s.type_of_event.is_some() {
-            item_map.insert(s!("type_of_event"), s.type_of_event.clone().unwrap());
+
+        // Optional fields are only written when present.
+        for (key, value) in [
+            ("type", &s.type_of_event),
+            ("uuid", &s.uuid),
+            ("os.login()", &s.os_login),
+            ("platform.system()", &s.platform),
+            ("machine_name", &s.machine_name),
+            ("generated_by", &s.generated_by),
+            ("way_this_info_was_added", &s.way_this_info_was_added),
+            ("datetime_of_annotation", &s.datetime_of_annotation),
+        ] {
+            if let Some(v) = value {
+                item_map.insert(key.to_string(), v.clone());
+            }
         }
+
         data_to_save.push(item_map);
     }
 

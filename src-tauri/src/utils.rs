@@ -209,14 +209,25 @@ pub fn list_of_segments(path_dir: &String) -> Vec<Segment> {
                 },
             };
 
-            // Every other field is optional.
-            let type_of_event = i.get("type_of_event").map(|x| x.to_string());
+            // Every other field is optional. "type" is the current key; the older
+            // "type_of_event" key is still accepted for backwards compatibility.
+            let type_of_event = i
+                .get("type")
+                .or_else(|| i.get("type_of_event"))
+                .map(|x| x.to_string());
 
             to_return.push(Segment {
                 name,
                 start,
                 end,
                 type_of_event,
+                uuid: i.get("uuid").map(|x| x.to_string()),
+                os_login: i.get("os.login()").map(|x| x.to_string()),
+                platform: i.get("platform.system()").map(|x| x.to_string()),
+                machine_name: i.get("machine_name").map(|x| x.to_string()),
+                generated_by: i.get("generated_by").map(|x| x.to_string()),
+                way_this_info_was_added: i.get("way_this_info_was_added").map(|x| x.to_string()),
+                datetime_of_annotation: i.get("datetime_of_annotation").map(|x| x.to_string()),
             });
         }
     }

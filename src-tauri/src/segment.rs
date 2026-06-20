@@ -6,7 +6,16 @@ pub struct Segment {
     pub name: String,
     pub start: DateTime<Local>,
     pub end: DateTime<Local>,
+    // Serialized to JSON as "type".
     pub type_of_event: Option<String>,
+    // Optional metadata. Preserved when loaded from disk, generated for new pomodoros.
+    pub uuid: Option<String>,
+    pub os_login: Option<String>,
+    pub platform: Option<String>,
+    pub machine_name: Option<String>,
+    pub generated_by: Option<String>,
+    pub way_this_info_was_added: Option<String>,
+    pub datetime_of_annotation: Option<String>,
 }
 
 impl Ord for Segment {
