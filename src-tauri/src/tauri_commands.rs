@@ -1,5 +1,6 @@
-use chrono::Datelike;
 use chrono::Local;
+use chrono::SecondsFormat;
+use chrono::Utc;
 use std::collections::HashMap;
 use std::fs::*;
 use std::path::Path; // TimeZone, NaiveDateTime
@@ -7,8 +8,10 @@ use std::path::Path; // TimeZone, NaiveDateTime
 use crate::config::{save_config_to_disk, AppConfig};
 use crate::segment;
 use crate::utils::execute_script_python;
+use crate::utils::list_files_in_folder;
 use crate::utils::list_of_segments;
 use crate::utils::save_json;
+use serde::Serialize;
 use crate::Segment;
 use crate::CURRENT_SEGS;
 use crate::PATH_ROOT_FOLDER;
@@ -98,29 +101,35 @@ pub fn annotate_pomodoro(
 
     // Iterate the segments on reverse
 
+    // Daily files are grouped by UTC date so they stay consistent with the
+    // UTC timestamps stored inside them.
+    let last_utc_date = last_segment.start.with_timezone(&Utc).date_naive();
+
     let mut data_to_save: Vec<HashMap<String, String>> = Vec::new();
     for s in all_segments.iter().rev() {
-        if s.start.day() != last_segment.start.day() {
+        if s.start.with_timezone(&Utc).date_naive() != last_utc_date {
             break;
         }
 
         let mut item_map: HashMap<String, String> = HashMap::new();
         item_map.insert("name".to_string(), s.name.to_string());
-        item_map.insert(s!("start"), s.start.format("%Y-%m-%d %H:%M:%S").to_string());
-        item_map.insert(s!("end"), s.end.format("%Y-%m-%d %H:%M:%S").to_string());
+        // All datetimes are stored in UTC ISO-8601 / RFC3339 form (e.g. ...+00:00).
+        item_map.insert(
+            s!("start"),
+            s.start.with_timezone(&Utc).to_rfc3339_opts(SecondsFormat::Micros, false),
+        );
+        item_map.insert(
+            s!("end"),
+            s.end.with_timezone(&Utc).to_rfc3339_opts(SecondsFormat::Micros, false),
+        );
         if s.type_of_event.is_some() {
             item_map.insert(s!("type_of_event"), s.type_of_event.clone().unwrap());
         }
         data_to_save.push(item_map);
     }
 
-    // We save the file
-    let filename: String = format!(
-        "{}/{}.json",
-        a,
-        // current_stack_of_segments[0].start.format("%Y-%m-%d")
-        last_segment.start.format("%Y-%m-%d")
-    );
+    // We save the file (named by UTC date).
+    let filename: String = format!("{}/{}.json", a, last_utc_date.format("%Y-%m-%d"));
     save_json(&filename, &data_to_save);
 
     // let mut current_stack_of_segments: Vec<Segment> = vec![];
@@ -295,6 +304,28 @@ pub fn get_config_file_path() -> String {
         .to_string()
 }
 
+#[derive(Serialize)]
+pub struct PomodoroStats {
+    file_count: usize,
+    pomodoro_count: usize,
+}
+
+#[tauri::command]
+pub fn get_pomodoro_stats() -> PomodoroStats {
+    let root_path = PATH_ROOT_FOLDER.lock().unwrap().to_string();
+
+    let file_count = list_files_in_folder(&root_path)
+        .map(|files| files.into_iter().filter(|x| x.ends_with(".json")).count())
+        .unwrap_or(0);
+
+    let pomodoro_count = CURRENT_SEGS.lock().unwrap().len();
+
+    PomodoroStats {
+        file_count,
+        pomodoro_count,
+    }
+}
+
 #[tauri::command]
 pub fn save_config(output_directory: String, default_pomodoro_time_minutes: i32) {
     // We update the in-memory state used by the rest of the commands.
@@ -331,9 +362,10 @@ pub fn get_last_date_of_segment() -> String {
 
     if list_of_files.len() > 0 {
         let last_file = list_of_files.last().unwrap();
-        // let last_file = last_file.split(".").collect::<Vec<&str>>()[0];
-        // last_date = last_file.to_string();
-        last_date = last_file.end.to_string();
+        last_date = last_file
+            .end
+            .with_timezone(&Utc)
+            .to_rfc3339_opts(SecondsFormat::Micros, false);
     }
 
     last_date

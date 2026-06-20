@@ -174,6 +174,7 @@ fn main() {
             conf_get_time_pomodoro_in_min,
             get_config,
             get_config_file_path,
+            get_pomodoro_stats,
             get_last_date_of_segment,
             pomodoro_cancel,
             pomodoro_end,

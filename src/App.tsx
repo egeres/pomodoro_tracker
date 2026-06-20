@@ -111,7 +111,17 @@ class App extends React.Component<MyProps, MyState> {
       document.getElementById("config_file_path_text").innerHTML = "Config file: " + path;
     })
 
+    this.refresh_config_stats()
+
     document.getElementById("overlay_config").style.display = "flex"
+  }
+
+  refresh_config_stats()
+  {
+    core.invoke("get_pomodoro_stats").then((stats: any) => {
+      document.getElementById("config_stats_text").innerHTML =
+        "File count: " + stats.file_count + " \u2014 Pomodoro count: " + stats.pomodoro_count;
+    })
   }
 
   save_config_menu()
@@ -147,6 +157,9 @@ class App extends React.Component<MyProps, MyState> {
       core.invoke("command_retrieve_last_pomodoros").then(to_create => {
         this.create_rows_left_panel(to_create)
       })
+
+      // We refresh the file / pomodoro counts for the (possibly new) directory.
+      this.refresh_config_stats()
     })
 
     this.close_pop_ups()
@@ -518,6 +531,8 @@ class App extends React.Component<MyProps, MyState> {
 
           <p className="config_label">Output directory</p>
           <input id="input_output_directory" className="element_left config_input" type="text" spellCheck="false"/>
+
+          <p id="config_stats_text" className="config_path_text">&nbsp;</p>
 
           <div className="spacer_l"></div>
 

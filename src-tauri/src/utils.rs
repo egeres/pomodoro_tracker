@@ -155,22 +155,58 @@ pub fn list_of_segments(path_dir: &String) -> Vec<Segment> {
             }
         };
 
-        for i in items.iter() {
+        for (idx, i) in items.iter().enumerate() {
             // "name", "start" and "end" are required. If any is missing or can't
             // be parsed, we skip just this pomodoro rather than crashing.
             let name = match i.get("name") {
                 Some(name) => name.to_string(),
-                None => continue,
+                None => {
+                    eprintln!(
+                        "Skipping entry #{} in '{}': missing required field 'name'",
+                        idx, full_path
+                    );
+                    continue;
+                }
             };
 
-            let start = match i.get("start").and_then(|s| parse_datetime(s)) {
-                Some(start) => start,
-                None => continue,
+            let start = match i.get("start") {
+                None => {
+                    eprintln!(
+                        "Skipping entry #{} in '{}': missing required field 'start'",
+                        idx, full_path
+                    );
+                    continue;
+                }
+                Some(raw) => match parse_datetime(raw) {
+                    Some(start) => start,
+                    None => {
+                        eprintln!(
+                            "Skipping entry #{} in '{}': unparseable 'start' value '{}'",
+                            idx, full_path, raw
+                        );
+                        continue;
+                    }
+                },
             };
 
-            let end = match i.get("end").and_then(|s| parse_datetime(s)) {
-                Some(end) => end,
-                None => continue,
+            let end = match i.get("end") {
+                None => {
+                    eprintln!(
+                        "Skipping entry #{} in '{}': missing required field 'end'",
+                        idx, full_path
+                    );
+                    continue;
+                }
+                Some(raw) => match parse_datetime(raw) {
+                    Some(end) => end,
+                    None => {
+                        eprintln!(
+                            "Skipping entry #{} in '{}': unparseable 'end' value '{}'",
+                            idx, full_path, raw
+                        );
+                        continue;
+                    }
+                },
             };
 
             // Every other field is optional.
@@ -184,6 +220,9 @@ pub fn list_of_segments(path_dir: &String) -> Vec<Segment> {
             });
         }
     }
+
+    println!("File count: {}", files.len());
+    println!("Pomodoro count: {}", to_return.len());
 
     // WIP, sort this vector once ord is implemented in Segment
 
