@@ -242,3 +242,62 @@ h1
 {
   font-size: 30px;
 }
+
+#burger_menu
+{
+  position: absolute;
+  top     : 15px;
+  right   : 15px;
+  z-index : 2;
+  cursor  : pointer;
+}
+
+.config_modal
+{
+  position: relative;
+  align-items: stretch;
+}
+
+.modal_close_x
+{
+  position: absolute;
+  top     : 10px;
+  right   : 10px;
+  cursor  : pointer;
+  line-height: 0;
+}
+
+.config_label
+{
+  align-self   : baseline;
+  margin-bottom: 5px;
+}
+
+.config_input
+{
+  box-sizing: border-box;
+}
+
+.config_save_button
+{
+  align-self: flex-end;
+  margin-top: 10px;
+}
+
+.config_path_text
+{
+  align-self : baseline;
+  margin-top : 15px;
+  margin-bottom: 0;
+  color      : #777;
+  font-size  : 14px;
+  word-break : break-all;
+  cursor     : text;
+
+  /* Overrides the .noselect on the overlay so the path can be copied. */
+  -webkit-touch-callout: text;
+  -webkit-user-select  : text;
+  -moz-user-select     : text;
+  -ms-user-select      : text;
+  user-select          : text;
+}

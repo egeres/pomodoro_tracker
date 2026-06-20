@@ -99,7 +99,57 @@ class App extends React.Component<MyProps, MyState> {
   show_menu_config()
   {
     this.play_audio_click()
+
+    core.invoke("get_config").then((cfg: any) => {
+      // @ts-ignore
+      document.getElementById("input_output_directory").value      = cfg.output_directory;
+      // @ts-ignore
+      document.getElementById("input_default_pomodoro_time").value = String(cfg.default_pomodoro_time_minutes);
+    })
+
+    core.invoke("get_config_file_path").then((path: any) => {
+      document.getElementById("config_file_path_text").innerHTML = "Config file: " + path;
+    })
+
     document.getElementById("overlay_config").style.display = "flex"
+  }
+
+  save_config_menu()
+  {
+    this.play_audio_click()
+
+    // @ts-ignore
+    let output_directory = document.getElementById("input_output_directory").value.trim()
+    // @ts-ignore
+    let minutes = parseInt(document.getElementById("input_default_pomodoro_time").value.trim(), 10)
+
+    if (isNaN(minutes) || minutes <= 0)
+    {
+      minutes = 25
+    }
+
+    core.invoke("save_config", {
+      outputDirectory           : output_directory,
+      defaultPomodoroTimeMinutes: minutes
+    }).then(() => {
+      // We reload the pomodoro time in case it changed.
+      this.time_sec_pomodoro = minutes * 60;
+
+      // We only reset the visible countdown when no pomodoro is running.
+      if (this.current_mode == "not_started")
+      {
+        this.time_sec_current = this.time_sec_pomodoro;
+        this.setState({progress: 1.0})
+        this.update_visuals()
+      }
+
+      // We reload the list of latest pomodoros in case the output directory changed.
+      core.invoke("command_retrieve_last_pomodoros").then(to_create => {
+        this.create_rows_left_panel(to_create)
+      })
+    })
+
+    this.close_pop_ups()
   }
 
   query_cancel_pomodoro()
@@ -447,36 +497,38 @@ class App extends React.Component<MyProps, MyState> {
   return (
     <div className="App">
 
+      <span id="burger_menu" className="noselect" onClick={() => this.show_menu_config()}>
+        <i
+        data-eva        = "menu-outline"
+        data-eva-fill   = "#eee"
+        data-eva-height = "32"
+        data-eva-width  = "32"></i>
+      </span>
+
       <div className="overlay_container noselect" id='overlay_config' style={{"display":"none"}}>
-        <div className="pop_up_dialog_box_with_gradient_borders" style={{"width":"80%"}}>
+        <div className="pop_up_dialog_box_with_gradient_borders config_modal" style={{"width":"80%"}}>
 
-          <p id="overlay_text" style={{"alignSelf": "baseline"}}>Path to export long calendar data</p>
-          <input id="input_path_to_export_lc" className="element_left" type="text" spellCheck="false"/>
+          <span className="modal_close_x" onClick={() => this.close_pop_ups()}>
+            <i
+            data-eva        = "close-outline"
+            data-eva-fill   = "#eee"
+            data-eva-height = "32"
+            data-eva-width  = "32"></i>
+          </span>
 
-          <div>
-          <span id="icon_volume_on" onClick={() => this.mute()}>
-            <i
-            data-eva        = "volume-up-outline"
-            data-eva-fill   = "#eee"
-            data-eva-height = "48"
-            data-eva-width  = "48"></i>
-          </span>
-          <span id="icon_volume_off" onClick={() => this.unmute()} style={{"display":"none"}}>
-            <i
-            data-eva        = "volume-off-outline"
-            data-eva-fill   = "#eee"
-            data-eva-height = "48"
-            data-eva-width  = "48"></i>
-          </span>
-          <i
-          onClick={() => this.close_pop_ups()}
-          data-eva        = "close-outline"
-          data-eva-fill   = "#eee"
-          data-eva-height = "48"
-          data-eva-width  = "48"></i>
-          </div>
+          <p className="config_label">Output directory</p>
+          <input id="input_output_directory" className="element_left config_input" type="text" spellCheck="false"/>
 
           <div className="spacer_l"></div>
+
+          <p className="config_label">Default pomodoro time (minutes)</p>
+          <input id="input_default_pomodoro_time" className="element_left config_input" type="text" spellCheck="false"/>
+
+          <div className="spacer_l"></div>
+
+          <div className="button_a config_save_button" onClick={() => this.save_config_menu()}>Save</div>
+
+          <p id="config_file_path_text" className="config_path_text">&nbsp;</p>
 
         </div>
       </div>

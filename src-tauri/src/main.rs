@@ -11,6 +11,7 @@ use std::sync::Mutex; // 1.4.0
 
 mod segment;
 use segment::Segment;
+mod config;
 mod tauri_commands;
 use tauri_commands::*;
 mod server_http;
@@ -30,15 +31,20 @@ lazy_static! {
 }
 
 fn main() {
-    // We initialize variables
     #[cfg(debug_assertions)]
     {
         println!("Starting backend...");
-        *TIMER_TOTAL_S.lock().unwrap() = 60 * 2;
     }
-    #[cfg(not(debug_assertions))]
-    {
-        *TIMER_TOTAL_S.lock().unwrap() = 60 * 25;
+
+    // We load the configuration (creates HOME/.config/pomodoro_app/config.json with
+    // defaults the first time, pointing the output directory to HOME/Pomodoros).
+    let app_config = config::load_or_create_config();
+    *PATH_ROOT_FOLDER.lock().unwrap() = app_config.output_directory.clone();
+    *TIMER_TOTAL_S.lock().unwrap() = app_config.default_pomodoro_time_minutes * 60;
+
+    // The output directory is created if it doesn't exist yet.
+    if !Path::new(&app_config.output_directory).exists() {
+        create_dir_all(&app_config.output_directory).unwrap();
     }
 
     {
@@ -166,10 +172,13 @@ fn main() {
             annotate_pomodoro,
             command_retrieve_last_pomodoros,
             conf_get_time_pomodoro_in_min,
+            get_config,
+            get_config_file_path,
             get_last_date_of_segment,
             pomodoro_cancel,
             pomodoro_end,
             pomodoro_start,
+            save_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

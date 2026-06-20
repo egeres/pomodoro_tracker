@@ -1,4 +1,6 @@
-use chrono::Local; // TimeZone, NaiveDateTime
+use chrono::DateTime;
+use chrono::Local;
+use chrono::NaiveDateTime;
 use chrono::TimeZone;
 use std::collections::HashMap;
 use std::error::Error;
@@ -40,11 +42,15 @@ pub fn save_json(filename: &String, data_to_save: &Vec<HashMap<String, String>>)
     }
 }
 
-// parse json file to list of hashmaps
+/// Parses a JSON file into a list of string-keyed maps.
+///
+/// This never panics: an unreadable file, invalid JSON, or a non-array root all
+/// return `Err` so the caller can skip the whole file. Within the array, entries
+/// that aren't objects are skipped, and only string-valued fields are kept (extra
+/// non-string fields such as numbers are ignored).
 pub fn load_json(file_name: &str) -> Result<Vec<HashMap<String, String>>, String> {
-    // Check that path exists
     if !Path::new(file_name).exists() {
-        panic!("'{}' does not exist", file_name);
+        return Err(format!("'{}' does not exist", file_name));
     }
 
     #[cfg(debug_assertions)]
@@ -52,37 +58,71 @@ pub fn load_json(file_name: &str) -> Result<Vec<HashMap<String, String>>, String
         println!("Reading... {}", file_name);
     }
 
-    let mut file = File::open(file_name).unwrap();
+    let mut file = File::open(file_name).map_err(|e| format!("could not open file: {:?}", e))?;
     let mut contents = String::new();
+    file.read_to_string(&mut contents)
+        .map_err(|e| format!("could not read file: {:?}", e))?;
 
-    file.read_to_string(&mut contents).unwrap();
-    let json_data: serde_json::Value = serde_json::from_str(&contents).unwrap();
-    let json_data = json_data.as_array().unwrap();
+    let json_data: serde_json::Value =
+        serde_json::from_str(&contents).map_err(|e| format!("invalid JSON: {:?}", e))?;
+
+    let json_array = match json_data.as_array() {
+        Some(arr) => arr,
+        None => return Err("expected a top-level JSON array".to_string()),
+    };
+
     let mut json_data_vec: Vec<HashMap<String, String>> = Vec::new();
-    for item in json_data {
-        let item = item.as_object().unwrap();
+    for item in json_array {
+        // Non-object entries are skipped instead of crashing.
+        let item = match item.as_object() {
+            Some(obj) => obj,
+            None => continue,
+        };
         let mut item_map: HashMap<String, String> = HashMap::new();
         for (key, value) in item {
-            item_map.insert(key.to_string(), value.as_str().unwrap().to_string());
+            // Only string values are kept; extra non-string fields are ignored.
+            if let Some(s) = value.as_str() {
+                item_map.insert(key.to_string(), s.to_string());
+            }
         }
         json_data_vec.push(item_map);
     }
     Ok(json_data_vec)
 }
 
+/// Parses a datetime string, accepting both the format this app writes
+/// (`%Y-%m-%d %H:%M:%S`) and RFC3339/ISO8601 timestamps with an offset
+/// (e.g. `2026-05-31T10:58:18.549880+00:00`). Returns `None` if neither matches.
+fn parse_datetime(value: &str) -> Option<DateTime<Local>> {
+    if let Ok(naive) = NaiveDateTime::parse_from_str(value, "%Y-%m-%d %H:%M:%S") {
+        if let Some(dt) = Local.from_local_datetime(&naive).single() {
+            return Some(dt);
+        }
+    }
+
+    if let Ok(dt) = DateTime::parse_from_rfc3339(value) {
+        return Some(dt.with_timezone(&Local));
+    }
+
+    None
+}
+
 // List files in a folder
 pub fn list_files_in_folder(folder_name: &str) -> Result<Vec<String>, String> {
-    // Check that path exists
     if !Path::new(folder_name).exists() {
-        panic!("'{}' does not exist", folder_name);
+        return Err(format!("'{}' does not exist", folder_name));
     }
 
     let mut files: Vec<String> = Vec::new();
-    for entry in read_dir(folder_name).unwrap() {
-        let entry = entry.unwrap();
-        let path = entry.path();
-        let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
-        files.push(file_name);
+    let entries = read_dir(folder_name).map_err(|e| format!("could not read dir: {:?}", e))?;
+    for entry in entries {
+        let entry = match entry {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+        if let Some(file_name) = entry.path().file_name().and_then(|n| n.to_str()) {
+            files.push(file_name.to_string());
+        }
     }
     Ok(files)
 }
@@ -91,41 +131,58 @@ pub fn list_files_in_folder(folder_name: &str) -> Result<Vec<String>, String> {
 pub fn list_of_segments(path_dir: &String) -> Vec<Segment> {
     let mut to_return: Vec<Segment> = Vec::new();
 
-    let mut files = list_files_in_folder(&path_dir).unwrap();
-    // for file in &files {
-    // println!("file: {}", file);
-    // }
+    // A missing/unreadable folder yields no segments instead of crashing.
+    let files = match list_files_in_folder(path_dir) {
+        Ok(files) => files,
+        Err(e) => {
+            eprintln!("Could not list '{}': {}", path_dir, e);
+            return to_return;
+        }
+    };
 
     // Filter only files that end with .json
-    files = files.into_iter().filter(|x| x.ends_with(".json")).collect();
+    let files: Vec<String> = files.into_iter().filter(|x| x.ends_with(".json")).collect();
 
-    let data_of_files_merged = files
-        .iter()
-        .map(|file_name| load_json(&(path_dir.to_owned() + "/" + file_name)).unwrap())
-        .flatten()
-        .collect::<Vec<HashMap<String, String>>>();
-    // for item in data_of_files_merged {
-    // 	println!("{:?}", item);
-    // }
+    for file_name in files.iter() {
+        let full_path = format!("{}/{}", path_dir, file_name);
 
-    for i in data_of_files_merged.iter() {
-        // to-do : refactor
-        let a = i.get("type_of_event");
-        let b: Option<String> = match a {
-            Some(x) => Some(x.to_string()),
-            None => None,
+        // Malformed or unreadable JSON files are skipped entirely.
+        let items = match load_json(&full_path) {
+            Ok(items) => items,
+            Err(e) => {
+                eprintln!("Skipping '{}': {}", full_path, e);
+                continue;
+            }
         };
 
-        to_return.push(Segment {
-            name: i.get("name").unwrap_or(&"unknown".to_string()).to_string(),
-            start: Local
-                .datetime_from_str(&i.get("start").unwrap(), "%Y-%m-%d %H:%M:%S")
-                .unwrap(),
-            end: Local
-                .datetime_from_str(&i.get("end").unwrap(), "%Y-%m-%d %H:%M:%S")
-                .unwrap(),
-            type_of_event: b,
-        });
+        for i in items.iter() {
+            // "name", "start" and "end" are required. If any is missing or can't
+            // be parsed, we skip just this pomodoro rather than crashing.
+            let name = match i.get("name") {
+                Some(name) => name.to_string(),
+                None => continue,
+            };
+
+            let start = match i.get("start").and_then(|s| parse_datetime(s)) {
+                Some(start) => start,
+                None => continue,
+            };
+
+            let end = match i.get("end").and_then(|s| parse_datetime(s)) {
+                Some(end) => end,
+                None => continue,
+            };
+
+            // Every other field is optional.
+            let type_of_event = i.get("type_of_event").map(|x| x.to_string());
+
+            to_return.push(Segment {
+                name,
+                start,
+                end,
+                type_of_event,
+            });
+        }
     }
 
     // WIP, sort this vector once ord is implemented in Segment

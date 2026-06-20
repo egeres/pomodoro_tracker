@@ -34,6 +34,7 @@ tauri-plugin-os = "2"
 tauri-plugin-notification = "2"
 whoami = "1.5.2"
 winapi = { version = "0.3", features = ["wincon"] }
+dirs = "6"
 
 [features]
 # by default Tauri runs in production mode

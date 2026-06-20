@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::fs::*;
 use std::path::Path; // TimeZone, NaiveDateTime
 
+use crate::config::{save_config_to_disk, AppConfig};
 use crate::segment;
 use crate::utils::execute_script_python;
 use crate::utils::list_of_segments;
@@ -277,6 +278,47 @@ pub fn annotate_pomodoro(
 pub fn conf_get_time_pomodoro_in_min() -> f32 {
     let total_time_in_m = (*TIMER_TOTAL_S.lock().unwrap()) as f32 / 60.0;
     total_time_in_m
+}
+
+#[tauri::command]
+pub fn get_config() -> AppConfig {
+    AppConfig {
+        output_directory: PATH_ROOT_FOLDER.lock().unwrap().to_string(),
+        default_pomodoro_time_minutes: (*TIMER_TOTAL_S.lock().unwrap()) / 60,
+    }
+}
+
+#[tauri::command]
+pub fn get_config_file_path() -> String {
+    crate::config::config_file_path()
+        .to_string_lossy()
+        .to_string()
+}
+
+#[tauri::command]
+pub fn save_config(output_directory: String, default_pomodoro_time_minutes: i32) {
+    // We update the in-memory state used by the rest of the commands.
+    *PATH_ROOT_FOLDER.lock().unwrap() = output_directory.clone();
+    *TIMER_TOTAL_S.lock().unwrap() = default_pomodoro_time_minutes * 60;
+
+    // The output directory is auto-created if it doesn't exist.
+    if !Path::new(&output_directory).exists() {
+        if let Err(e) = create_dir_all(&output_directory) {
+            println!("Error creating output directory: {:?}", e);
+        }
+    }
+
+    // The configuration is persisted to HOME/.config/pomodoro_app/config.json.
+    let config = AppConfig {
+        output_directory: output_directory.clone(),
+        default_pomodoro_time_minutes,
+    };
+    save_config_to_disk(&config);
+
+    // The segments are reloaded from the (possibly new) output directory.
+    let mut segments = list_of_segments(&output_directory);
+    segments.sort();
+    *CURRENT_SEGS.lock().unwrap() = segments;
 }
 
 #[tauri::command]
