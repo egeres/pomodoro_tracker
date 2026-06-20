@@ -1,12 +1,10 @@
 use chrono::Local;
 use chrono::SecondsFormat;
 use chrono::Utc;
-use std::collections::HashMap;
 use std::fs::*;
 use std::path::Path; // TimeZone, NaiveDateTime
 
 use crate::config::{save_config_to_disk, AppConfig};
-use crate::segment;
 use crate::utils::execute_script_python;
 use crate::utils::list_files_in_folder;
 use crate::utils::list_of_segments;
@@ -21,12 +19,6 @@ use crate::TIMER_TOTAL_S;
 use std::env;
 use std::io::Write;
 use whoami;
-
-macro_rules! s {
-    ($lit:expr) => {
-        $lit.to_string()
-    };
-}
 
 #[tauri::command]
 pub fn command_retrieve_last_pomodoros() -> Vec<String> {
@@ -113,25 +105,40 @@ pub fn annotate_pomodoro(
     // UTC timestamps stored inside them.
     let last_utc_date = last_segment.start.with_timezone(&Utc).date_naive();
 
-    let mut data_to_save: Vec<HashMap<String, String>> = Vec::new();
+    let mut data_to_save: Vec<serde_json::Value> = Vec::new();
     for s in all_segments.iter().rev() {
         if s.start.with_timezone(&Utc).date_naive() != last_utc_date {
             break;
         }
 
-        let mut item_map: HashMap<String, String> = HashMap::new();
-        item_map.insert("name".to_string(), s.name.to_string());
+        let mut item = serde_json::Map::new();
+        item.insert("name".to_string(), serde_json::Value::String(s.name.clone()));
         // All datetimes are stored in UTC ISO-8601 / RFC3339 form (e.g. ...+00:00).
-        item_map.insert(
-            s!("start"),
-            s.start.with_timezone(&Utc).to_rfc3339_opts(SecondsFormat::Micros, false),
+        item.insert(
+            "start".to_string(),
+            serde_json::Value::String(
+                s.start.with_timezone(&Utc).to_rfc3339_opts(SecondsFormat::Micros, false),
+            ),
         );
-        item_map.insert(
-            s!("end"),
-            s.end.with_timezone(&Utc).to_rfc3339_opts(SecondsFormat::Micros, false),
+        item.insert(
+            "end".to_string(),
+            serde_json::Value::String(
+                s.end.with_timezone(&Utc).to_rfc3339_opts(SecondsFormat::Micros, false),
+            ),
         );
 
-        // Optional fields are only written when present.
+        // Duration is derived from start/end and stored as numbers.
+        let duration_seconds = (s.end - s.start).num_seconds();
+        item.insert(
+            "duration_seconds".to_string(),
+            serde_json::json!(duration_seconds as f64),
+        );
+        item.insert(
+            "duration_minutes".to_string(),
+            serde_json::json!((duration_seconds as f64 / 60.0).round() as i64),
+        );
+
+        // Optional string fields are only written when present.
         for (key, value) in [
             ("type", &s.type_of_event),
             ("uuid", &s.uuid),
@@ -143,15 +150,15 @@ pub fn annotate_pomodoro(
             ("datetime_of_annotation", &s.datetime_of_annotation),
         ] {
             if let Some(v) = value {
-                item_map.insert(key.to_string(), v.clone());
+                item.insert(key.to_string(), serde_json::Value::String(v.clone()));
             }
         }
 
-        data_to_save.push(item_map);
+        data_to_save.push(serde_json::Value::Object(item));
     }
 
-    // We save the file (named by UTC date).
-    let filename: String = format!("{}/{}.json", a, last_utc_date.format("%Y-%m-%d"));
+    // We save the file (named by UTC date, e.g. 2021-11-27_pomodoro.json).
+    let filename: String = format!("{}/{}_pomodoro.json", a, last_utc_date.format("%Y-%m-%d"));
     save_json(&filename, &data_to_save);
 
     // let mut current_stack_of_segments: Vec<Segment> = vec![];

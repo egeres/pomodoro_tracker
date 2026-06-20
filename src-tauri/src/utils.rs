@@ -17,7 +17,7 @@ use crate::RUNNING;
 use crate::START_TIME;
 use crate::TIMER_TOTAL_S;
 
-pub fn save_json(filename: &String, data_to_save: &Vec<HashMap<String, String>>) {
+pub fn save_json<T: serde::Serialize>(filename: &String, data_to_save: &T) {
     #[cfg(debug_assertions)]
     {
         println!("Saving {}...", filename);
@@ -30,7 +30,7 @@ pub fn save_json(filename: &String, data_to_save: &Vec<HashMap<String, String>>)
             return;
         }
     };
-    let json_data = serde_json::to_string_pretty(&data_to_save).unwrap();
+    let json_data = serde_json::to_string_pretty(data_to_save).unwrap();
     let out = file.write_all(json_data.as_bytes());
 
     #[cfg(debug_assertions)]
