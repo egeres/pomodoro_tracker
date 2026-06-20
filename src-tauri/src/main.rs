@@ -28,6 +28,8 @@ lazy_static! {
     static ref START_TIME: Mutex<DateTime<Local>> = Mutex::new(Local::now());
     static ref RUNNING: Mutex<bool> = Mutex::new(false);
     static ref CURRENT_SEGS: Mutex<Vec<Segment>> = Mutex::new(Vec::new());
+    static ref COMMAND_START: Mutex<String> = Mutex::new(String::new());
+    static ref COMMAND_END: Mutex<String> = Mutex::new(String::new());
 }
 
 fn main() {
@@ -41,6 +43,8 @@ fn main() {
     let app_config = config::load_or_create_config();
     *PATH_ROOT_FOLDER.lock().unwrap() = app_config.output_directory.clone();
     *TIMER_TOTAL_S.lock().unwrap() = app_config.default_pomodoro_time_minutes * 60;
+    *COMMAND_START.lock().unwrap() = app_config.command_start.clone();
+    *COMMAND_END.lock().unwrap() = app_config.command_end.clone();
 
     // The output directory is created if it doesn't exist yet.
     if !Path::new(&app_config.output_directory).exists() {

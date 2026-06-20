@@ -6,6 +6,12 @@ use std::path::PathBuf;
 pub struct AppConfig {
     pub output_directory: String,
     pub default_pomodoro_time_minutes: i32,
+    /// Shell command run when a pomodoro starts. Empty means "do nothing".
+    #[serde(default)]
+    pub command_start: String,
+    /// Shell command run when a pomodoro ends. Empty means "do nothing".
+    #[serde(default)]
+    pub command_end: String,
 }
 
 /// Returns the user's home directory, falling back to the current directory.
@@ -19,6 +25,8 @@ impl Default for AppConfig {
         AppConfig {
             output_directory: output.to_string_lossy().to_string(),
             default_pomodoro_time_minutes: 25,
+            command_start: String::new(),
+            command_end: String::new(),
         }
     }
 }

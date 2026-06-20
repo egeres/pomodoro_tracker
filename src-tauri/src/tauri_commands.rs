@@ -5,12 +5,14 @@ use std::fs::*;
 use std::path::Path; // TimeZone, NaiveDateTime
 
 use crate::config::{save_config_to_disk, AppConfig};
-use crate::utils::execute_script_python;
+use crate::utils::execute_command;
 use crate::utils::list_files_in_folder;
 use crate::utils::list_of_segments;
 use crate::utils::save_json;
 use serde::Serialize;
 use crate::Segment;
+use crate::COMMAND_END;
+use crate::COMMAND_START;
 use crate::CURRENT_SEGS;
 use crate::PATH_ROOT_FOLDER;
 use crate::RUNNING;
@@ -323,6 +325,8 @@ pub fn get_config() -> AppConfig {
     AppConfig {
         output_directory: PATH_ROOT_FOLDER.lock().unwrap().to_string(),
         default_pomodoro_time_minutes: (*TIMER_TOTAL_S.lock().unwrap()) / 60,
+        command_start: COMMAND_START.lock().unwrap().clone(),
+        command_end: COMMAND_END.lock().unwrap().clone(),
     }
 }
 
@@ -356,10 +360,17 @@ pub fn get_pomodoro_stats() -> PomodoroStats {
 }
 
 #[tauri::command]
-pub fn save_config(output_directory: String, default_pomodoro_time_minutes: i32) {
+pub fn save_config(
+    output_directory: String,
+    default_pomodoro_time_minutes: i32,
+    command_start: String,
+    command_end: String,
+) {
     // We update the in-memory state used by the rest of the commands.
     *PATH_ROOT_FOLDER.lock().unwrap() = output_directory.clone();
     *TIMER_TOTAL_S.lock().unwrap() = default_pomodoro_time_minutes * 60;
+    *COMMAND_START.lock().unwrap() = command_start.clone();
+    *COMMAND_END.lock().unwrap() = command_end.clone();
 
     // The output directory is auto-created if it doesn't exist.
     if !Path::new(&output_directory).exists() {
@@ -372,6 +383,8 @@ pub fn save_config(output_directory: String, default_pomodoro_time_minutes: i32)
     let config = AppConfig {
         output_directory: output_directory.clone(),
         default_pomodoro_time_minutes,
+        command_start,
+        command_end,
     };
     save_config_to_disk(&config);
 
@@ -405,10 +418,10 @@ pub fn pomodoro_start() {
     *START_TIME.lock().unwrap() =
         Local::now() + chrono::Duration::seconds(*TIMER_TOTAL_S.lock().unwrap() as i64);
 
-    // This needs to be an option configurable by the user
-    let o = execute_script_python("C:/Github/Apuntes/tool_blockdistractions_on.py");
-    if o.is_err() {
-        println!("Error: {:?}", o.err().unwrap());
+    // User-configurable command run when a pomodoro starts (empty = no-op).
+    let command_start = COMMAND_START.lock().unwrap().clone();
+    if let Err(e) = execute_command(&command_start) {
+        println!("Error running start command: {:?}", e);
     }
 
     *RUNNING.lock().unwrap() = true;
@@ -416,16 +429,10 @@ pub fn pomodoro_start() {
 
 #[tauri::command]
 pub fn pomodoro_end() {
-    // This needs to be an option configurable by the user
-    let o = execute_script_python("C:/Github/Apuntes/tool_blockdistractions_off.py");
-    if o.is_err() {
-        println!("Error: {:?}", o.err().unwrap());
-    }
-    let o = execute_script_python(
-        "C:/Github/Apuntes/Windows_automated/personal_tracking_export_pomodoros.py",
-    );
-    if o.is_err() {
-        println!("Error: {:?}", o.err().unwrap());
+    // User-configurable command run when a pomodoro ends (empty = no-op).
+    let command_end = COMMAND_END.lock().unwrap().clone();
+    if let Err(e) = execute_command(&command_end) {
+        println!("Error running end command: {:?}", e);
     }
 
     *RUNNING.lock().unwrap() = false;

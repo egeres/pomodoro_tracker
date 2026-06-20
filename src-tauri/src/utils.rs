@@ -240,6 +240,35 @@ pub fn list_of_segments(path_dir: &String) -> Vec<Segment> {
     return to_return;
 }
 
+/// Runs an arbitrary user-configured shell command without blocking.
+///
+/// The command is interpreted by the platform shell (`cmd /C` on Windows,
+/// `sh -c` elsewhere) so users can write whatever they want (run a python
+/// script, a binary, a one-liner, etc.). An empty/whitespace-only command is a
+/// no-op.
+pub fn execute_command(command: &str) -> Result<(), Box<dyn Error>> {
+    let command = command.trim();
+    if command.is_empty() {
+        return Ok(());
+    }
+
+    println!("Running command: {}", command);
+
+    let spawn_result = if cfg!(target_os = "windows") {
+        Command::new("cmd").arg("/C").arg(command).spawn()
+    } else {
+        Command::new("sh").arg("-c").arg(command).spawn()
+    };
+
+    match spawn_result {
+        Ok(_) => println!("Command launched successfully"),
+        Err(e) => println!("Command gave an error: {:?}", e),
+    }
+
+    Ok(())
+}
+
+#[allow(dead_code)]
 pub fn execute_script_python(script_to_execute: &str) -> Result<(), Box<dyn Error>> {
     println!("{}", script_to_execute);
 

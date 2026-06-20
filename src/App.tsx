@@ -105,6 +105,10 @@ class App extends React.Component<MyProps, MyState> {
       document.getElementById("input_output_directory").value      = cfg.output_directory;
       // @ts-ignore
       document.getElementById("input_default_pomodoro_time").value = String(cfg.default_pomodoro_time_minutes);
+      // @ts-ignore
+      document.getElementById("input_command_start").value         = cfg.command_start || "";
+      // @ts-ignore
+      document.getElementById("input_command_end").value           = cfg.command_end || "";
     })
 
     core.invoke("get_config_file_path").then((path: any) => {
@@ -138,9 +142,16 @@ class App extends React.Component<MyProps, MyState> {
       minutes = 25
     }
 
+    // @ts-ignore
+    let command_start = document.getElementById("input_command_start").value
+    // @ts-ignore
+    let command_end = document.getElementById("input_command_end").value
+
     core.invoke("save_config", {
       outputDirectory           : output_directory,
-      defaultPomodoroTimeMinutes: minutes
+      defaultPomodoroTimeMinutes: minutes,
+      commandStart              : command_start,
+      commandEnd                : command_end
     }).then(() => {
       // We reload the pomodoro time in case it changed.
       this.time_sec_pomodoro = minutes * 60;
@@ -538,6 +549,16 @@ class App extends React.Component<MyProps, MyState> {
 
           <p className="config_label">Default pomodoro time (minutes)</p>
           <input id="input_default_pomodoro_time" className="element_left config_input" type="text" spellCheck="false"/>
+
+          <div className="spacer_l"></div>
+
+          <p className="config_label">Command on start</p>
+          <input id="input_command_start" className="element_left config_input" type="text" spellCheck="false" placeholder="e.g. python C:/scripts/block_distractions_on.py"/>
+
+          <div className="spacer_l"></div>
+
+          <p className="config_label">Command on end</p>
+          <input id="input_command_end" className="element_left config_input" type="text" spellCheck="false" placeholder="e.g. python C:/scripts/export.py"/>
 
           <div className="spacer_l"></div>
 
